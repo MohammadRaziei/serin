@@ -276,11 +276,13 @@ Value decodeFromFile(const std::string& inputFile, const DecodeOptions& options)
 }
 
 Value loadToon(const std::string& filename) {
-    return decodeFromFile(filename);
+    DecodeOptions options;
+    return decodeFromFile(filename, options);
 }
 
 Value loadsToon(const std::string& toonString) {
-    return decode(toonString);
+    DecodeOptions options;
+    return decode(toonString, options);
 }
 
 std::string dumpsToon(const Value& value, const EncodeOptions& options) {
@@ -292,4 +294,3 @@ void dumpToon(const Value& value, const std::string& filename, const EncodeOptio
 }
 
 } // namespace serin
-

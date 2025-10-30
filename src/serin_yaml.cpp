@@ -360,7 +360,7 @@ Value loadsYaml(const std::string& yamlString) {
     return parser.parse();
 }
 
-std::string dumpsYaml(const Value& value) {
+std::string dumpsYaml(const Value& value, int indent) {
     std::string output;
     dumpValue(value, 0, output);
     if (!output.empty() && output.back() == '\n') {
@@ -369,13 +369,12 @@ std::string dumpsYaml(const Value& value) {
     return output;
 }
 
-void dumpYaml(const Value& value, const std::string& filename) {
+void dumpYaml(const Value& value, const std::string& filename, int indent) {
     std::ofstream file(filename);
     if (!file.is_open()) {
         throw std::runtime_error("Cannot open YAML file for writing: " + filename);
     }
-    file << dumpsYaml(value);
+    file << dumpsYaml(value, indent);
 }
 
 } // namespace serin
-

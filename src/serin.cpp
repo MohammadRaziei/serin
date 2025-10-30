@@ -12,10 +12,15 @@ bool isPrimitive(const Value& value) { return value.isPrimitive(); }
 bool isObject(const Value& value) { return value.isObject(); }
 bool isArray(const Value& value) { return value.isArray(); }
 
+// Forward declarations for functions defined in other files
+Value parseJsonFromFile(const std::string& inputFile);
+std::string toJsonString(const Value& value, int indent = 2);
+
 std::string encodeFromFile(const std::string& inputFile, const EncodeOptions& options) {
     Value data = parseJsonFromFile(inputFile);
     return encode(data, options);
 }
+
 
 void decodeToFile(const std::string& input, const std::string& outputFile, const DecodeOptions& options) {
     std::ofstream file(outputFile);
@@ -28,4 +33,3 @@ void decodeToFile(const std::string& input, const std::string& outputFile, const
 }
 
 } // namespace serin
-
