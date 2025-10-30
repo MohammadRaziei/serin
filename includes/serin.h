@@ -41,43 +41,38 @@ struct Value {
     Array& asArray() { return std::get<Array>(value); }
 };
 
-// Delimiter types
-enum class Delimiter {
-    Comma = ',',
-    Tab = '\t',
-    Pipe = '|'
-};
+// // Delimiter types
+// enum class Delimiter {
+//     Comma = ',',
+//     Tab = '\t',
+//     Pipe = '|'
+// };
 
-// Encode options
-struct EncodeOptions {
-    int indent = 2;
-    Delimiter delimiter = Delimiter::Comma;
-    bool lengthMarker = false;
-};
+// // Encode options
+// struct EncodeOptions {
+//     int indent = 2;
+//     Delimiter delimiter = Delimiter::Comma;
+//     bool lengthMarker = false;
+// };
 
-// Decode options
-struct DecodeOptions {
-    int indent = 2;
-    bool strict = true;
-};
+// // Decode options
+// struct DecodeOptions {
+//     int indent = 2;
+//     bool strict = true;
+// };
 
 // Main API functions
-std::string encode(const Value& value, const EncodeOptions& options = {});
-Value decode(const std::string& input, const DecodeOptions& options = {});
+// std::string encode(const Value& value, const EncodeOptions& options = {});
+// Value decode(const std::string& input, const DecodeOptions& options = {});
 
-// JSON parsing functions
-Value parseJson(const std::string& jsonString);
-Value parseJsonFromFile(const std::string& inputFile);
-std::string toJsonString(const Value& value, int indent = 2);
 
-// File I/O functions (equivalent to CLI functionality)
-std::string encodeFromFile(const std::string& inputFile, const EncodeOptions& options = {});
-void encodeToFile(const Value& value, const std::string& outputFile, const EncodeOptions& options = {});
-Value decodeFromFile(const std::string& inputFile, const DecodeOptions& options = {});
-void decodeToFile(const std::string& input, const std::string& outputFile, const DecodeOptions& options = {});
 
-// Auto-detect and convert functions
-void convertFile(const std::string& inputFile, const std::string& outputFile = "", const EncodeOptions& encodeOptions = {}, const DecodeOptions& decodeOptions = {});
+// // File I/O functions (equivalent to CLI functionality)
+// std::string encodeFromFile(const std::string& inputFile, const EncodeOptions& options = {});
+// void encodeToFile(const Value& value, const std::string& outputFile, const EncodeOptions& options = {});
+// Value decodeFromFile(const std::string& inputFile, const DecodeOptions& options = {});
+// void decodeToFile(const std::string& input, const std::string& outputFile, const DecodeOptions& options = {});
+
 
 // Utility functions
 bool isPrimitive(const Value& value);
@@ -94,13 +89,13 @@ void dumpJson(const Value& value, const std::string& filename, int indent = 2);
 // TOON functions
 Value loadToon(const std::string& filename);
 Value loadsToon(const std::string& toonString);
-std::string dumpsToon(const Value& value, const EncodeOptions& options = {});
-void dumpToon(const Value& value, const std::string& filename, const EncodeOptions& options = {});
+std::string dumpsToon(const Value& value, int indent = 2);
+void dumpToon(const Value& value, const std::string& filename, int indent = 2);
 
-// YAML functions (placeholder - would require YAML library)
+// JSON functions
 Value loadYaml(const std::string& filename);
 Value loadsYaml(const std::string& yamlString);
-std::string dumpsYaml(const Value& value);
-void dumpYaml(const Value& value, const std::string& filename);
+std::string dumpsYaml(const Value& value, int indent = 2);
+void dumpYaml(const Value& value, const std::string& filename, int indent = 2);
 
 } // namespace serin

@@ -8,6 +8,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Create library
 add_library(libtoon STATIC
     src/serin.cpp
+    src/serin_toon.cpp
+    src/serin_json.cpp
+    src/serin_yaml.cpp
+    src/utils.cpp
 )
 
 # Include directories
