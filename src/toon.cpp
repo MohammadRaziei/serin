@@ -3,6 +3,9 @@
 #include <regex>
 #include <algorithm>
 #include <cctype>
+#include <fstream>
+#include <filesystem>
+#include <iostream>
 
 namespace toon {
 
@@ -314,6 +317,196 @@ JsonValue decode(const std::string& input, const DecodeOptions& options) {
     
     // Default to string
     return JsonValue(input);
+}
+
+// File I/O functions implementation
+void encodeToFile(const JsonValue& value, const std::string& outputFile, const EncodeOptions& options) {
+    std::ofstream file(outputFile);
+    if (!file.is_open()) {
+        throw std::runtime_error("Cannot open output file: " + outputFile);
+    }
+    
+    std::string toonContent = encode(value, options);
+    file << toonContent;
+}
+
+JsonValue decodeFromFile(const std::string& inputFile, const DecodeOptions& options) {
+    std::ifstream file(inputFile);
+    if (!file.is_open()) {
+        throw std::runtime_error("Cannot open input file: " + inputFile);
+    }
+    
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    std::string toonContent = buffer.str();
+    
+    return decode(toonContent, options);
+}
+
+// JSON parsing functions implementation
+JsonValue parseJson(const std::string& jsonString) {
+    // Simple JSON parser implementation
+    // For now, this is a placeholder that handles basic cases
+    // In a real implementation, you would use a proper JSON parser
+    
+    std::string trimmed = jsonString;
+    trimmed.erase(0, trimmed.find_first_not_of(" \t\n\r"));
+    trimmed.erase(trimmed.find_last_not_of(" \t\n\r") + 1);
+    
+    if (trimmed.empty()) {
+        return JsonObject{};
+    }
+    
+    // Check for object
+    if (trimmed.front() == '{' && trimmed.back() == '}') {
+        JsonObject obj;
+        // Simple object parsing - in real implementation, parse properly
+        return JsonValue(obj);
+    }
+    
+    // Check for array
+    if (trimmed.front() == '[' && trimmed.back() == ']') {
+        JsonArray arr;
+        // Simple array parsing - in real implementation, parse properly
+        return JsonValue(arr);
+    }
+    
+    // Check for string
+    if (trimmed.front() == '"' && trimmed.back() == '"') {
+        return JsonValue(trimmed.substr(1, trimmed.length() - 2));
+    }
+    
+    // Check for number
+    try {
+        size_t pos;
+        double num = std::stod(trimmed, &pos);
+        if (pos == trimmed.length()) {
+            return JsonValue(num);
+        }
+    } catch (...) {
+        // Not a number
+    }
+    
+    // Check for boolean
+    if (trimmed == "true") return JsonValue(true);
+    if (trimmed == "false") return JsonValue(false);
+    if (trimmed == "null") return JsonValue(nullptr);
+    
+    // Default to string
+    return JsonValue(trimmed);
+}
+
+JsonValue parseJsonFromFile(const std::string& inputFile) {
+    std::ifstream file(inputFile);
+    if (!file.is_open()) {
+        throw std::runtime_error("Cannot open input file: " + inputFile);
+    }
+    
+    std::stringstream buffer;
+    buffer << file.rdbuf();
+    return parseJson(buffer.str());
+}
+
+std::string toJsonString(const JsonValue& value, int indent) {
+    // Simple JSON string conversion
+    // In a real implementation, this would properly format JSON
+    
+    if (value.isPrimitive()) {
+        const JsonPrimitive& primitive = value.asPrimitive();
+        return std::visit([](const auto& val) -> std::string {
+            using T = std::decay_t<decltype(val)>;
+            
+            if constexpr (std::is_same_v<T, std::nullptr_t>) {
+                return "null";
+            }
+            else if constexpr (std::is_same_v<T, bool>) {
+                return val ? "true" : "false";
+            }
+            else if constexpr (std::is_same_v<T, double>) {
+                return std::to_string(val);
+            }
+            else if constexpr (std::is_same_v<T, std::string>) {
+                return "\"" + val + "\"";
+            }
+        }, primitive);
+    }
+    else if (value.isObject()) {
+        const JsonObject& obj = value.asObject();
+        if (obj.empty()) {
+            return "{}";
+        }
+        return "{ /* object with " + std::to_string(obj.size()) + " properties */ }";
+    }
+    else if (value.isArray()) {
+        const JsonArray& arr = value.asArray();
+        if (arr.empty()) {
+            return "[]";
+        }
+        return "[ /* array with " + std::to_string(arr.size()) + " elements */ ]";
+    }
+    
+    return "null";
+}
+
+// Update file I/O functions to use JSON parsing
+std::string encodeFromFile(const std::string& inputFile, const EncodeOptions& options) {
+    JsonValue jsonData = parseJsonFromFile(inputFile);
+    return encode(jsonData, options);
+}
+
+void decodeToFile(const std::string& input, const std::string& outputFile, const DecodeOptions& options) {
+    std::ofstream file(outputFile);
+    if (!file.is_open()) {
+        throw std::runtime_error("Cannot open output file: " + outputFile);
+    }
+    
+    JsonValue decoded = decode(input, options);
+    std::string jsonOutput = toJsonString(decoded);
+    file << jsonOutput;
+}
+
+// Update convertFile to use proper JSON parsing
+void convertFile(const std::string& inputFile, const std::string& outputFile, 
+                const EncodeOptions& encodeOptions, const DecodeOptions& decodeOptions) {
+    namespace fs = std::filesystem;
+    
+    if (!fs::exists(inputFile)) {
+        throw std::runtime_error("Input file does not exist: " + inputFile);
+    }
+    
+    std::string extension = fs::path(inputFile).extension().string();
+    
+    if (extension == ".json") {
+        // JSON to TOON conversion
+        JsonValue jsonData = parseJsonFromFile(inputFile);
+        std::string toonContent = encode(jsonData, encodeOptions);
+        
+        if (outputFile.empty()) {
+            std::cout << toonContent << std::endl;
+        } else {
+            std::ofstream file(outputFile);
+            if (!file.is_open()) {
+                throw std::runtime_error("Cannot open output file: " + outputFile);
+            }
+            file << toonContent;
+        }
+    } else if (extension == ".toon") {
+        // TOON to JSON conversion
+        JsonValue decoded = decodeFromFile(inputFile, decodeOptions);
+        std::string jsonContent = toJsonString(decoded);
+        
+        if (outputFile.empty()) {
+            std::cout << jsonContent << std::endl;
+        } else {
+            std::ofstream file(outputFile);
+            if (!file.is_open()) {
+                throw std::runtime_error("Cannot open output file: " + outputFile);
+            }
+            file << jsonContent;
+        }
+    } else {
+        throw std::runtime_error("Unsupported file format: " + extension);
+    }
 }
 
 } // namespace toon

@@ -65,6 +65,20 @@ struct DecodeOptions {
 std::string encode(const JsonValue& value, const EncodeOptions& options = {});
 JsonValue decode(const std::string& input, const DecodeOptions& options = {});
 
+// JSON parsing functions
+JsonValue parseJson(const std::string& jsonString);
+JsonValue parseJsonFromFile(const std::string& inputFile);
+std::string toJsonString(const JsonValue& value, int indent = 2);
+
+// File I/O functions (equivalent to CLI functionality)
+std::string encodeFromFile(const std::string& inputFile, const EncodeOptions& options = {});
+void encodeToFile(const JsonValue& value, const std::string& outputFile, const EncodeOptions& options = {});
+JsonValue decodeFromFile(const std::string& inputFile, const DecodeOptions& options = {});
+void decodeToFile(const std::string& input, const std::string& outputFile, const DecodeOptions& options = {});
+
+// Auto-detect and convert functions
+void convertFile(const std::string& inputFile, const std::string& outputFile = "", const EncodeOptions& encodeOptions = {}, const DecodeOptions& decodeOptions = {});
+
 // Utility functions
 bool isPrimitive(const JsonValue& value);
 bool isObject(const JsonValue& value);
