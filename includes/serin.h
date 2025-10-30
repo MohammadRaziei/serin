@@ -61,25 +61,6 @@ struct DecodeOptions {
     bool strict = true;
 };
 
-// Main API functions
-std::string encode(const Value& value, const EncodeOptions& options = {});
-Value decode(const std::string& input, const DecodeOptions& options = {});
-
-// File I/O functions (equivalent to CLI functionality)
-std::string encodeFromFile(const std::string& inputFile, const EncodeOptions& options = {});
-void encodeToFile(const Value& value, const std::string& outputFile, const EncodeOptions& options = {});
-Value decodeFromFile(const std::string& inputFile, const DecodeOptions& options = {});
-void decodeToFile(const std::string& input, const std::string& outputFile, const DecodeOptions& options = {});
-
-
-
-// // File I/O functions (equivalent to CLI functionality)
-// std::string encodeFromFile(const std::string& inputFile, const EncodeOptions& options = {});
-// void encodeToFile(const Value& value, const std::string& outputFile, const EncodeOptions& options = {});
-// Value decodeFromFile(const std::string& inputFile, const DecodeOptions& options = {});
-// void decodeToFile(const std::string& input, const std::string& outputFile, const DecodeOptions& options = {});
-
-
 // Utility functions
 bool isPrimitive(const Value& value);
 bool isObject(const Value& value);
@@ -95,10 +76,10 @@ void dumpJson(const Value& value, const std::string& filename, int indent = 2);
 // TOON functions
 Value loadToon(const std::string& filename);
 Value loadsToon(const std::string& toonString);
-std::string dumpsToon(const Value& value, const EncodeOptions& options = {});
-void dumpToon(const Value& value, const std::string& filename, const EncodeOptions& options = {});
+std::string dumpsToon(const Value& value, int indent = 2);
+void dumpToon(const Value& value, const std::string& filename, int indent = 2);
 
-// JSON functions
+// YAML functions
 Value loadYaml(const std::string& filename);
 Value loadsYaml(const std::string& yamlString);
 std::string dumpsYaml(const Value& value, int indent = 2);
