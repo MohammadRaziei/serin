@@ -15,6 +15,8 @@ bool isArray(const Value& value) { return value.isArray(); }
 // Forward declarations for functions defined in other files
 Value parseJsonFromFile(const std::string& inputFile);
 std::string toJsonString(const Value& value, int indent = 2);
+std::string encode(const Value& value, const EncodeOptions& options);
+Value decode(const std::string& input, const DecodeOptions& options);
 
 std::string encodeFromFile(const std::string& inputFile, const EncodeOptions& options) {
     Value data = parseJsonFromFile(inputFile);

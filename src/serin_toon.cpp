@@ -285,11 +285,15 @@ Value loadsToon(const std::string& toonString) {
     return decode(toonString, options);
 }
 
-std::string dumpsToon(const Value& value, const EncodeOptions& options) {
+std::string dumpsToon(const Value& value, int indent) {
+    EncodeOptions options;
+    options.indent = indent;
     return encode(value, options);
 }
 
-void dumpToon(const Value& value, const std::string& filename, const EncodeOptions& options) {
+void dumpToon(const Value& value, const std::string& filename, int indent) {
+    EncodeOptions options;
+    options.indent = indent;
     encodeToFile(value, filename, options);
 }
 
