@@ -1,23 +1,23 @@
 cmake_minimum_required(VERSION 3.15)
-project(ctoon VERSION 1.0.0 LANGUAGES CXX)
+project(libtoon VERSION 1.0.0 LANGUAGES CXX)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Create library
-add_library(ctoon STATIC
+add_library(libtoon STATIC
     src/toon.cpp
 )
 
 # Include directories
-target_include_directories(ctoon PUBLIC
+target_include_directories(libtoon PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/includes>
     $<INSTALL_INTERFACE:includes>
 )
 
 # Compiler options
-target_compile_options(ctoon PRIVATE
+target_compile_options(libtoon PRIVATE
     -Wall
     -Wextra
     -Wpedantic
@@ -34,13 +34,13 @@ if (BUILD_EXAMPLES)
     foreach(EXAMPLE_SOURCE IN LISTS EXAMPLE_SOURCES)
         get_filename_component(EXAMPLE_NAME ${EXAMPLE_SOURCE} NAME_WE)
         add_executable(${EXAMPLE_NAME} ${EXAMPLE_SOURCE})
-        target_link_libraries(${EXAMPLE_NAME} PUBLIC ctoon)
+        target_link_libraries(${EXAMPLE_NAME} PUBLIC libtoon)
     endforeach()
 endif()
 
 # Install targets
-install(TARGETS ctoon
-    EXPORT ctoonTargets
+install(TARGETS libtoon
+    EXPORT libtoonTargets
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin
@@ -53,21 +53,21 @@ install(DIRECTORY includes/
 )
 
 # Export package
-install(EXPORT ctoonTargets
-    FILE ctoonTargets.cmake
-    NAMESPACE ctoon::
-    DESTINATION lib/cmake/ctoon
+install(EXPORT libtoonTargets
+    FILE libtoonTargets.cmake
+    NAMESPACE libtoon::
+    DESTINATION lib/cmake/libtoon
 )
 
 # Package configuration
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/ctoonConfigVersion.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/libtoonConfigVersion.cmake"
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY AnyNewerVersion
 )
 
 install(FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/ctoonConfigVersion.cmake"
-    DESTINATION lib/cmake/ctoon
+    "${CMAKE_CURRENT_BINARY_DIR}/libtoonConfigVersion.cmake"
+    DESTINATION lib/cmake/libtoon
 )
