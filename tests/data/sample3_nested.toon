@@ -1,0 +1,9 @@
+order{
+  id: ORD-12345
+  status: completed
+  customer{name, email}:
+    John Doe, john@example.com
+  items[2]{product, quantity, price}:
+    Book, 2, 15.0
+    Pen, 5, 2.5
+}
