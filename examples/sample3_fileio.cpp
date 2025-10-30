@@ -1,69 +1,48 @@
-#include "toon.hpp"
+#include "serin.h"
 #include <iostream>
-
-using namespace toon;
+#include <fstream>
 
 int main() {
-    std::cout << "TOON Sample 3: File I/O Operations" << std::endl;
-    std::cout << "==================================" << std::endl << std::endl;
+    std::cout << "Serin Sample 3: File I/O Operations" << std::endl;
+    std::cout << "===================================" << std::endl << std::endl;
 
-    // Create sample data
-    JsonObject data;
-    data["app"] = JsonValue("MyApp");
-    data["version"] = JsonValue("1.0.0");
+    // Create test data
+    serin::Object data;
+    data["name"] = serin::Value("Test User");
+    data["age"] = serin::Value(30.0);
+    data["active"] = serin::Value(true);
     
-    JsonArray users;
+    serin::Array tags;
+    tags.push_back(serin::Value("programming"));
+    tags.push_back(serin::Value("c++"));
+    tags.push_back(serin::Value("serialization"));
+    data["tags"] = serin::Value(tags);
     
-    JsonObject user1;
-    user1["id"] = JsonValue(1.0);
-    user1["name"] = JsonValue("Alice");
-    user1["active"] = JsonValue(true);
-    users.push_back(user1);
-    
-    JsonObject user2;
-    user2["id"] = JsonValue(2.0);
-    user2["name"] = JsonValue("Bob");
-    user2["active"] = JsonValue(false);
-    users.push_back(user2);
-    
-    data["users"] = JsonValue(users);
-    
-    JsonValue dataValue(data);
-    
-    std::cout << "Original Data:" << std::endl;
-    std::cout << encode(dataValue) << std::endl;
-    std::cout << std::endl;
-    
-    // Demonstrate file operations
+    serin::Value value(data);
+
     try {
-        std::cout << "1. Encoding to file..." << std::endl;
-        encodeToFile(dataValue, "output.toon");
-        std::cout << "   ✓ Data written to output.toon" << std::endl;
+        // Save to TOON file
+        serin::encodeToFile(value, "sample_output.toon");
+        std::cout << "Saved data to sample_output.toon" << std::endl;
         
-        std::cout << "2. Decoding from file..." << std::endl;
-        JsonValue decoded = decodeFromFile("output.toon");
-        std::cout << "   ✓ Data read from output.toon" << std::endl;
+        // Load from TOON file
+        serin::Value loaded = serin::decodeFromFile("sample_output.toon");
+        std::cout << "Loaded data from sample_output.toon" << std::endl;
         
-        std::cout << "3. Decoded data:" << std::endl;
-        std::cout << encode(decoded) << std::endl;
+        // Display loaded data
+        std::cout << "Loaded data:" << std::endl;
+        std::cout << serin::encode(loaded) << std::endl;
         
-        std::cout << "4. File conversion simulation..." << std::endl;
-        // This simulates the CLI functionality: toon input.json -o output.toon
-        std::cout << "   ✓ JSON to TOON conversion supported" << std::endl;
-        std::cout << "   ✓ TOON to JSON conversion supported" << std::endl;
+        // Test JSON file operations
+        serin::dumpJson(value, "sample_output.json");
+        std::cout << "\nSaved data to sample_output.json" << std::endl;
         
-        // Clean up
-        std::remove("output.toon");
-        std::cout << "   ✓ Temporary files cleaned up" << std::endl;
+        serin::Value jsonLoaded = serin::loadJson("sample_output.json");
+        std::cout << "Loaded data from sample_output.json" << std::endl;
         
     } catch (const std::exception& e) {
         std::cout << "Error: " << e.what() << std::endl;
     }
-    
-    std::cout << std::endl << "File I/O operations demonstrate CLI-equivalent functionality:" << std::endl;
-    std::cout << "- encodeToFile()    → toon input.json -o output.toon" << std::endl;
-    std::cout << "- decodeFromFile()  → toon data.toon -o output.json" << std::endl;
-    std::cout << "- convertFile()     → Auto-detection based on file extension" << std::endl;
     
     return 0;
 }

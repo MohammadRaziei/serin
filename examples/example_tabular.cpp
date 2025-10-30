@@ -1,47 +1,46 @@
-#include "toon.hpp"
+#include "serin.h"
 #include <iostream>
 
-using namespace toon;
-
 int main() {
-    std::cout << "TOON C++ - Tabular Format Example" << std::endl;
-    std::cout << "=================================" << std::endl << std::endl;
+    std::cout << "Serin Example: Tabular Data Format" << std::endl;
+    std::cout << "==================================" << std::endl << std::endl;
 
-    // Create tabular data (array of objects with identical structure)
-    JsonArray employees;
+    // Create employee data
+    serin::Array employees;
     
-    JsonObject emp1;
-    emp1["id"] = JsonValue(101.0);
-    emp1["name"] = JsonValue("Ali Rezaei");
-    emp1["department"] = JsonValue("Engineering");
-    emp1["salary"] = JsonValue(75000.0);
-    emp1["active"] = JsonValue(true);
+    // Employee 1
+    serin::Object emp1;
+    emp1["id"] = serin::Value(101.0);
+    emp1["name"] = serin::Value("Ali Rezaei");
+    emp1["department"] = serin::Value("Engineering");
+    emp1["salary"] = serin::Value(75000.0);
+    emp1["active"] = serin::Value(true);
     employees.push_back(emp1);
     
-    JsonObject emp2;
-    emp2["id"] = JsonValue(102.0);
-    emp2["name"] = JsonValue("Sara Mohammadi");
-    emp2["department"] = JsonValue("Marketing");
-    emp2["salary"] = JsonValue(65000.0);
-    emp2["active"] = JsonValue(true);
+    // Employee 2
+    serin::Object emp2;
+    emp2["id"] = serin::Value(102.0);
+    emp2["name"] = serin::Value("Sara Mohammadi");
+    emp2["department"] = serin::Value("Marketing");
+    emp2["salary"] = serin::Value(65000.0);
+    emp2["active"] = serin::Value(true);
     employees.push_back(emp2);
     
-    JsonObject emp3;
-    emp3["id"] = JsonValue(103.0);
-    emp3["name"] = JsonValue("Reza Karimi");
-    emp3["department"] = JsonValue("Sales");
-    emp3["salary"] = JsonValue(70000.0);
-    emp3["active"] = JsonValue(false);
+    // Employee 3 (inactive)
+    serin::Object emp3;
+    emp3["id"] = serin::Value(103.0);
+    emp3["name"] = serin::Value("Reza Karimi");
+    emp3["department"] = serin::Value("Sales");
+    emp3["salary"] = serin::Value(70000.0);
+    emp3["active"] = serin::Value(false);
     employees.push_back(emp3);
     
-    JsonObject company;
-    company["employees"] = JsonValue(employees);
+    serin::Object data;
+    data["employees"] = serin::Value(employees);
     
-    std::cout << "TOON Format (Tabular):" << std::endl;
-    std::cout << "======================" << std::endl;
-    std::cout << encode(JsonValue(company)) << std::endl;
-    
-    std::cout << std::endl << "Equivalent JSON would be much more verbose!" << std::endl;
+    std::cout << "TOON Format Output:" << std::endl;
+    std::cout << "-------------------" << std::endl;
+    std::cout << serin::encode(serin::Value(data)) << std::endl;
     
     return 0;
 }

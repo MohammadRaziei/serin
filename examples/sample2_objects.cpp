@@ -1,33 +1,29 @@
-#include "toon.hpp"
+#include "serin.h"
 #include <iostream>
 
-using namespace toon;
-
 int main() {
-    std::cout << "TOON Sample 2: Objects and Nesting" << std::endl;
-    std::cout << "==================================" << std::endl << std::endl;
+    std::cout << "Serin Sample 2: Object Types" << std::endl;
+    std::cout << "============================" << std::endl << std::endl;
 
-    // Create nested object structure
-    JsonObject config;
-    config["appName"] = JsonValue("MyApp");
-    config["version"] = JsonValue("1.0.0");
-    config["debug"] = JsonValue(true);
+    // Create a nested object structure
+    serin::Object address;
+    address["street"] = serin::Value("123 Main St");
+    address["city"] = serin::Value("Tehran");
+    address["country"] = serin::Value("Iran");
     
-    JsonObject database;
-    database["host"] = JsonValue("localhost");
-    database["port"] = JsonValue(5432.0);
-    database["name"] = JsonValue("mydb");
+    serin::Object person;
+    person["name"] = serin::Value("Mohammad");
+    person["age"] = serin::Value(30.0);
+    person["address"] = serin::Value(address);
     
-    config["database"] = JsonValue(database);
+    serin::Array hobbies;
+    hobbies.push_back(serin::Value("programming"));
+    hobbies.push_back(serin::Value("reading"));
+    hobbies.push_back(serin::Value("hiking"));
+    person["hobbies"] = serin::Value(hobbies);
     
-    JsonObject cache;
-    cache["enabled"] = JsonValue(true);
-    cache["ttl"] = JsonValue(3600.0);
-    
-    config["cache"] = JsonValue(cache);
-    
-    std::cout << "Configuration Object:" << std::endl;
-    std::cout << encode(JsonValue(config)) << std::endl;
+    std::cout << "Nested Object:" << std::endl;
+    std::cout << serin::encode(serin::Value(person)) << std::endl;
     
     return 0;
 }

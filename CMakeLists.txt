@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(libtoon VERSION 1.0.0 LANGUAGES CXX)
+project(serin VERSION 1.0.0 LANGUAGES CXX)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -7,7 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Create library
 add_library(libtoon STATIC
-    src/toon.cpp
+    src/serin.cpp
 )
 
 # Include directories
@@ -37,6 +37,10 @@ if (BUILD_EXAMPLES)
         target_link_libraries(${EXAMPLE_NAME} PUBLIC libtoon)
     endforeach()
 endif()
+
+# Build CLI tool
+add_executable(toon cli.cpp)
+target_link_libraries(toon PUBLIC libtoon)
 
 # Install targets
 install(TARGETS libtoon
