@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Create library
-add_library(libtoon STATIC
+add_library(serin STATIC
     src/serin.cpp
     src/serin_toon.cpp
     src/serin_json.cpp
@@ -15,13 +15,13 @@ add_library(libtoon STATIC
 )
 
 # Include directories
-target_include_directories(libtoon PUBLIC
+target_include_directories(serin PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/includes>
     $<INSTALL_INTERFACE:includes>
 )
 
 # Compiler options
-target_compile_options(libtoon PRIVATE
+target_compile_options(serin PRIVATE
     -Wall
     -Wextra
     -Wpedantic
@@ -38,17 +38,17 @@ if (BUILD_EXAMPLES)
     foreach(EXAMPLE_SOURCE IN LISTS EXAMPLE_SOURCES)
         get_filename_component(EXAMPLE_NAME ${EXAMPLE_SOURCE} NAME_WE)
         add_executable(${EXAMPLE_NAME} ${EXAMPLE_SOURCE})
-        target_link_libraries(${EXAMPLE_NAME} PUBLIC libtoon)
+        target_link_libraries(${EXAMPLE_NAME} PUBLIC serin)
     endforeach()
 endif()
 
 # Build CLI tool
-add_executable(toon cli.cpp)
-target_link_libraries(toon PUBLIC libtoon)
+add_executable(serin-cli src/cli.cpp)
+target_link_libraries(serin-cli PUBLIC serin)
 
 # Install targets
-install(TARGETS libtoon
-    EXPORT libtoonTargets
+install(TARGETS serin
+    EXPORT serinTargets
     LIBRARY DESTINATION lib
     ARCHIVE DESTINATION lib
     RUNTIME DESTINATION bin
@@ -61,10 +61,10 @@ install(DIRECTORY includes/
 )
 
 # Export package
-install(EXPORT libtoonTargets
-    FILE libtoonTargets.cmake
-    NAMESPACE libtoon::
-    DESTINATION lib/cmake/libtoon
+install(EXPORT serinTargets
+    FILE serinTargets.cmake
+    NAMESPACE serin::
+    DESTINATION lib/cmake/serin
 )
 
 # Package configuration
