@@ -23,7 +23,7 @@ int main() {
     person["hobbies"] = serin::Value(hobbies);
     
     std::cout << "Nested Object:" << std::endl;
-    std::cout << serin::encode(serin::Value(person)) << std::endl;
+    std::cout << serin::dumpsToon(serin::Value(person)) << std::endl;
     
     return 0;
 }

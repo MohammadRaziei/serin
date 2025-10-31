@@ -40,7 +40,7 @@ int main() {
     
     std::cout << "TOON Format Output:" << std::endl;
     std::cout << "-------------------" << std::endl;
-    std::cout << serin::encode(serin::Value(data)) << std::endl;
+    std::cout << serin::dumpsToon(serin::Value(data)) << std::endl;
     
     return 0;
 }

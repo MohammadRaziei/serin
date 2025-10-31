@@ -11,10 +11,10 @@ int main() {
     serin::Value boolean(true);
     serin::Value nullValue(nullptr);
     
-    std::cout << "String: " << serin::encode(str) << std::endl;
-    std::cout << "Number: " << serin::encode(num) << std::endl;
-    std::cout << "Boolean: " << serin::encode(boolean) << std::endl;
-    std::cout << "Null: " << serin::encode(nullValue) << std::endl;
+    std::cout << "String: " << serin::dumpsToon(str) << std::endl;
+    std::cout << "Number: " << serin::dumpsToon(num) << std::endl;
+    std::cout << "Boolean: " << serin::dumpsToon(boolean) << std::endl;
+    std::cout << "Null: " << serin::dumpsToon(nullValue) << std::endl;
     
     return 0;
 }

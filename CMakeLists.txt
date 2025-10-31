@@ -1,23 +1,24 @@
 cmake_minimum_required(VERSION 3.15)
-project(serin VERSION 1.0.0 LANGUAGES CXX)
+project(serin VERSION 1.0.0 LANGUAGES CXX C)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Create library
-add_library(serin STATIC
-    src/serin.cpp
-    src/serin_toon.cpp
-    src/serin_json.cpp
-    src/serin_yaml.cpp
-    src/utils.cpp
+add_library(serin
+    src/sources/serin.cpp
+    src/sources/serin_toon.cpp
+    src/sources/serin_json.cpp src/sources/yyjson.c
+    src/sources/serin_yaml.cpp
+    src/sources/utils.cpp
 )
 
 # Include directories
 target_include_directories(serin PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/includes>
     $<INSTALL_INTERFACE:includes>
+        PRIVATE ${CMAKE_SOURCE_DIR}/src/sources
 )
 
 # Compiler options
@@ -43,39 +44,39 @@ if (BUILD_EXAMPLES)
 endif()
 
 # Build CLI tool
-add_executable(serin-cli src/cli.cpp)
+add_executable(serin-cli src/sources/cli.cpp)
 target_link_libraries(serin-cli PUBLIC serin)
 
-# Install targets
-install(TARGETS serin
-    EXPORT serinTargets
-    LIBRARY DESTINATION lib
-    ARCHIVE DESTINATION lib
-    RUNTIME DESTINATION bin
-    INCLUDES DESTINATION include
-)
-
-install(DIRECTORY includes/
-    DESTINATION include
-    FILES_MATCHING PATTERN "*.hpp"
-)
-
-# Export package
-install(EXPORT serinTargets
-    FILE serinTargets.cmake
-    NAMESPACE serin::
-    DESTINATION lib/cmake/serin
-)
-
-# Package configuration
-include(CMakePackageConfigHelpers)
-write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/libtoonConfigVersion.cmake"
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY AnyNewerVersion
-)
-
-install(FILES
-    "${CMAKE_CURRENT_BINARY_DIR}/libtoonConfigVersion.cmake"
-    DESTINATION lib/cmake/libtoon
-)
+## Install targets
+#install(TARGETS serin
+#    EXPORT serinTargets
+#    LIBRARY DESTINATION lib
+#    ARCHIVE DESTINATION lib
+#    RUNTIME DESTINATION bin
+#    INCLUDES DESTINATION include
+#)
+#
+#install(DIRECTORY includes/
+#    DESTINATION include
+#    FILES_MATCHING PATTERN "*.hpp"
+#)
+#
+## Export package
+#install(EXPORT serinTargets
+#    FILE serinTargets.cmake
+#    NAMESPACE serin::
+#    DESTINATION lib/cmake/serin
+#)
+#
+## Package configuration
+#include(CMakePackageConfigHelpers)
+#write_basic_package_version_file(
+#    "${CMAKE_CURRENT_BINARY_DIR}/serinConfigVersion.cmake"
+#    VERSION ${PROJECT_VERSION}
+#    COMPATIBILITY AnyNewerVersion
+#)
+#
+#install(FILES
+#    "${CMAKE_CURRENT_BINARY_DIR}/serinConfigVersion.cmake"
+#    DESTINATION lib/cmake/serin
+#)

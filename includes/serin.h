@@ -13,7 +13,7 @@ namespace serin {
 struct Value;
 
 // TOON value types
-using Primitive = std::variant<std::string, double, bool, std::nullptr_t>;
+using Primitive = std::variant<std::string, double, int64_t, bool, std::nullptr_t>;
 using Object = std::unordered_map<std::string, Value>;
 using Array = std::vector<Value>;
 
