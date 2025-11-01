@@ -68,7 +68,8 @@ int main() {
     tags.push_back(serin::Value("programming"));
     tags.push_back(serin::Value("c++"));
     tags.push_back(serin::Value("serialization"));
-    data["tags"] = serin::Value(tags);
+    data["tags"] = serin::Value(tag
+s);
     
     serin::Value value(data);
 
@@ -145,7 +146,7 @@ TOON (Token-Oriented Object Notation) is a compact, human-readable format design
 
 ### TOON Example
 
-```json
+```js
 // JSON
 {
   "users": [
@@ -155,7 +156,7 @@ TOON (Token-Oriented Object Notation) is a compact, human-readable format design
 }
 ```
 
-```
+```js
 // TOON (42.3% fewer tokens)
 users[2]{id,name,role}:
   1,Alice,admin
