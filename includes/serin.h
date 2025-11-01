@@ -51,7 +51,7 @@ enum class Delimiter {
 struct ToonOptions {
 public:
     ToonOptions() = default;
-    explicit ToonOptions(int indent);
+    ToonOptions(int indent);
 
     ToonOptions& setIndent(int indent);
     ToonOptions& setDelimiter(Delimiter delimiter);

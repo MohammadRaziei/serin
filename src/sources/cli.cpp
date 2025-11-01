@@ -12,7 +12,7 @@
 namespace fs = std::filesystem;
 
 namespace {
-constexpr const char *kSerinVersion = "0.1.0";
+constexpr const char *serinVersion = "0.1.0";
 
 enum class Format {
     Json,
@@ -141,7 +141,7 @@ int main(int argc, char **argv) {
     }
 
     if (showVersion) {
-        std::cout << "serin-cli " << kSerinVersion << std::endl;
+        std::cout << "serin " << serinVersion << std::endl;
         return 0;
     }
 

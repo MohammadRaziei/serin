@@ -68,4 +68,4 @@ endif()
 # Build CLI tool
 add_executable(serin-cli src/sources/cli.cpp)
 target_link_libraries(serin-cli PUBLIC serin)
-set_target_properties(serin-cli PROPERTIES OUTPUT_NAME serin-cli)
+set_target_properties(serin-cli PROPERTIES OUTPUT_NAME serin)
