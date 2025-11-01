@@ -1,12 +1,16 @@
 # Serin - Serialized In
 
-<p align="center">
-  <img src="docs/images/serin.svg" alt="Serin Logo" width="200" height="314">
-</p>
-
-**Serin** (acronym for Serialized In) is a C++ and Python serialization library that supports multiple formats like JSON, YAML, and TOON, and can convert data from any format to another.
-
-This project is written using the C++17 standard and is highly efficient and fast.
+<div align="center">
+  <div style="display: flex; align-items: center; justify-content: center; gap: 40px;">
+    <div style="flex: 0 0 auto;">
+      <img src="docs/images/serin.svg" alt="Serin Logo" width="130" >
+    </div>
+    <div style="flex: 1;">
+      <p><strong>Serin</strong> (acronym for Serialized In) is a C++ and Python serialization library that supports multiple formats like JSON, YAML, and TOON, and can convert data from any format to another.</p>
+      <p>This project is written using the C++17 standard and is highly efficient and fast.</p>
+    </div>
+  </div>
+</div>
 
 ## 🚀 Features
 
