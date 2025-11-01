@@ -19,7 +19,6 @@ Makefile
 
 # CMake
 CMakeUserPresets.json
-*.cmake
 !CMakeLists.txt
 
 # Python
