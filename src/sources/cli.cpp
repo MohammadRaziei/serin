@@ -9,6 +9,10 @@
 #include <stdexcept>
 #include <string>
 
+
+#define STRINGIFY(x) #x
+#define MACRO_STRINGIFY(x) STRINGIFY(x)
+
 namespace fs = std::filesystem;
 
 namespace {

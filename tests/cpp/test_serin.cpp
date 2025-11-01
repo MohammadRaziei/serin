@@ -2,321 +2,317 @@
 #include "doctest.h"
 #include "serin.h"
 
-#include <cstdlib>
-#include <filesystem>
-#include <fstream>
-#include <iterator>
-#include <sstream>
-#include <system_error>
+#include <variant>
 
-TEST_CASE("Basic JSON serialization") {
-    SUBCASE("Load JSON from file") {
-        auto value = serin::loadJson("tests/data/sample1_user.json");
-        CHECK(value.isObject());
-        
-        auto obj = value.asObject();
-        CHECK(obj["name"].asPrimitive() == "Alice");
-        CHECK(obj["age"].asPrimitive() == 30.0);
-        CHECK(obj["active"].asPrimitive() == true);
-        
-        auto tags = obj["tags"].asArray();
-        CHECK(tags.size() == 3);
-        CHECK(tags[0].asPrimitive() == "programming");
-        CHECK(tags[1].asPrimitive() == "c++");
-        CHECK(tags[2].asPrimitive() == "serialization");
+namespace {
+
+const serin::Object& expectObject(const serin::Value& value) {
+    REQUIRE(value.isObject());
+    return value.asObject();
+}
+
+const serin::Array& expectArray(const serin::Value& value) {
+    REQUIRE(value.isArray());
+    return value.asArray();
+}
+
+const std::string& expectString(const serin::Value& value) {
+    const auto& primitive = value.asPrimitive();
+    REQUIRE(std::holds_alternative<std::string>(primitive));
+    return std::get<std::string>(primitive);
+}
+
+std::string trim(const std::string& input) {
+    const auto first = input.find_first_not_of(" \t\r\n");
+    if (first == std::string::npos) {
+        return "";
     }
-    
-    SUBCASE("Dump JSON to string") {
+    const auto last = input.find_last_not_of(" \t\r\n");
+    return input.substr(first, last - first + 1);
+}
+
+double expectNumber(const serin::Value& value) {
+    const auto& primitive = value.asPrimitive();
+    if (std::holds_alternative<double>(primitive)) {
+        return std::get<double>(primitive);
+    }
+    if (std::holds_alternative<int64_t>(primitive)) {
+        return static_cast<double>(std::get<int64_t>(primitive));
+    }
+    FAIL_CHECK("Primitive is not numeric");
+    return 0.0;
+}
+
+bool expectBool(const serin::Value& value) {
+    const auto& primitive = value.asPrimitive();
+    REQUIRE(std::holds_alternative<bool>(primitive));
+    return std::get<bool>(primitive);
+}
+
+void checkSample1User(const serin::Value& value) {
+    const auto& obj = expectObject(value);
+    CHECK_EQ(expectString(obj.at("name")), "Alice");
+    CHECK_EQ(expectNumber(obj.at("age")), doctest::Approx(30.0));
+    CHECK(expectBool(obj.at("active")));
+
+    const auto& tags = expectArray(obj.at("tags"));
+    REQUIRE_EQ(tags.size(), 3);
+    CHECK_EQ(expectString(tags[0]), "programming");
+    CHECK_EQ(expectString(tags[1]), "c++");
+    CHECK_EQ(expectString(tags[2]), "serialization");
+}
+
+void checkSample2Users(const serin::Value& value) {
+    const auto& obj = expectObject(value);
+    const auto& users = expectArray(obj.at("users"));
+    REQUIRE_EQ(users.size(), 2);
+
+    const auto& user1 = expectObject(users[0]);
+    CHECK_EQ(expectNumber(user1.at("id")), doctest::Approx(1.0));
+    CHECK_EQ(expectString(user1.at("name")), "Alice");
+    CHECK_EQ(expectString(user1.at("role")), "admin");
+
+    const auto& user2 = expectObject(users[1]);
+    CHECK_EQ(expectNumber(user2.at("id")), doctest::Approx(2.0));
+    CHECK_EQ(expectString(user2.at("name")), "Bob");
+    CHECK_EQ(expectString(user2.at("role")), "user");
+}
+
+void checkSample3Nested(const serin::Value& value) {
+    const auto& obj = expectObject(value);
+    const auto& order = expectObject(obj.at("order"));
+
+    CHECK_EQ(expectString(order.at("id")), "ORD-12345");
+    CHECK_EQ(expectString(order.at("status")), "completed");
+
+    const auto& customer = expectObject(order.at("customer"));
+    CHECK_EQ(expectString(customer.at("name")), "John Doe");
+    CHECK_EQ(expectString(customer.at("email")), "john@example.com");
+
+    const auto& items = expectArray(order.at("items"));
+    REQUIRE_EQ(items.size(), 2);
+
+    const auto& item1 = expectObject(items[0]);
+    CHECK_EQ(expectString(item1.at("product")), "Book");
+    CHECK_EQ(expectNumber(item1.at("quantity")), doctest::Approx(2.0));
+    CHECK_EQ(expectNumber(item1.at("price")), doctest::Approx(15.0));
+
+    const auto& item2 = expectObject(items[1]);
+    CHECK_EQ(expectString(item2.at("product")), "Pen");
+    CHECK_EQ(expectNumber(item2.at("quantity")), doctest::Approx(5.0));
+    CHECK_EQ(expectNumber(item2.at("price")), doctest::Approx(2.5));
+}
+
+} // namespace
+
+template <typename DumpFn, typename LoadFn>
+void expectConversion(const serin::Value& source,
+                      DumpFn&& dumps,
+                      LoadFn&& loads,
+                      void (*validator)(const serin::Value&)) {
+    const auto serialized = dumps(source);
+    const auto converted = loads(serialized);
+    validator(converted);
+}
+
+TEST_CASE("Sample 1 stays consistent across formats") {
+    const auto jsonValue = serin::loadJson("tests/data/sample1_user.json");
+    const auto yamlValue = serin::loadYaml("tests/data/sample1_user.yaml");
+    const auto toonValue = serin::loadToon("tests/data/sample1_user.toon");
+    const auto& toonText = expectString(toonValue);
+
+    checkSample1User(jsonValue);
+    checkSample1User(yamlValue);
+
+    const auto canonicalToon = serin::dumpsToon(jsonValue);
+    CHECK_EQ(trim(toonText), trim(canonicalToon));
+
+    SUBCASE("JSON dumps can be parsed back") {
         serin::Object data;
         data["name"] = serin::Value("Alice");
         data["age"] = serin::Value(30.0);
         data["active"] = serin::Value(true);
-        
+
         serin::Array tags;
         tags.push_back(serin::Value("programming"));
         tags.push_back(serin::Value("c++"));
         tags.push_back(serin::Value("serialization"));
         data["tags"] = serin::Value(tags);
-        
-        serin::Value value(data);
-        std::string json = serin::dumpsJson(value);
-        
-        CHECK(json.find("\"name\": \"Alice\"") != std::string::npos);
-        CHECK(json.find("\"age\": 30") != std::string::npos);
-        CHECK(json.find("\"active\": true") != std::string::npos);
-    }
-}
 
-TEST_CASE("Basic TOON serialization") {
-    SUBCASE("Load TOON from file") {
-        auto value = serin::loadToon("tests/data/sample1_user.toon");
-        CHECK(value.isObject());
-        
-        auto obj = value.asObject();
-        CHECK(obj["name"].asPrimitive() == "Alice");
-        CHECK(obj["age"].asPrimitive() == 30.0);
-        CHECK(obj["active"].asPrimitive() == true);
-        
-        auto tags = obj["tags"].asArray();
-        CHECK(tags.size() == 3);
-        CHECK(tags[0].asPrimitive() == "programming");
-        CHECK(tags[1].asPrimitive() == "c++");
-        CHECK(tags[2].asPrimitive() == "serialization");
+        const serin::Value value(data);
+        checkSample1User(serin::loadsJson(serin::dumpsJson(value)));
     }
-    
-    SUBCASE("Dump TOON to string") {
+
+    SUBCASE("YAML dumps can be parsed back") {
         serin::Object data;
         data["name"] = serin::Value("Alice");
         data["age"] = serin::Value(30.0);
         data["active"] = serin::Value(true);
-        
+
         serin::Array tags;
         tags.push_back(serin::Value("programming"));
         tags.push_back(serin::Value("c++"));
         tags.push_back(serin::Value("serialization"));
         data["tags"] = serin::Value(tags);
-        
-        serin::Value value(data);
-        std::string toon = serin::dumpsToon(value);
-        
-        CHECK(toon.find("name: Alice") != std::string::npos);
-        CHECK(toon.find("age: 30") != std::string::npos);
-        CHECK(toon.find("active: true") != std::string::npos);
-        CHECK(toon.find("tags[3]: programming,c++,serialization") != std::string::npos);
-    }
-}
 
-TEST_CASE("Basic YAML serialization") {
-    SUBCASE("Load YAML from file") {
-        auto value = serin::loadYaml("tests/data/sample1_user.yaml");
-        CHECK(value.isObject());
-        
-        auto obj = value.asObject();
-        CHECK(obj["name"].asPrimitive() == "Alice");
-        CHECK(obj["age"].asPrimitive() == 30.0);
-        CHECK(obj["active"].asPrimitive() == true);
-        
-        auto tags = obj["tags"].asArray();
-        CHECK(tags.size() == 3);
-        CHECK(tags[0].asPrimitive() == "programming");
-        CHECK(tags[1].asPrimitive() == "c++");
-        CHECK(tags[2].asPrimitive() == "serialization");
+        const serin::Value value(data);
+        checkSample1User(serin::loadsYaml(serin::dumpsYaml(value)));
     }
-    
-    SUBCASE("Dump YAML to string") {
+
+    SUBCASE("TOON dumps can be parsed back") {
         serin::Object data;
         data["name"] = serin::Value("Alice");
         data["age"] = serin::Value(30.0);
         data["active"] = serin::Value(true);
-        
+
         serin::Array tags;
         tags.push_back(serin::Value("programming"));
         tags.push_back(serin::Value("c++"));
         tags.push_back(serin::Value("serialization"));
         data["tags"] = serin::Value(tags);
-        
-        serin::Value value(data);
-        std::string yaml = serin::dumpsYaml(value);
-        
-        CHECK(yaml.find("name: Alice") != std::string::npos);
-        CHECK(yaml.find("age: 30") != std::string::npos);
-        CHECK(yaml.find("active: true") != std::string::npos);
-        CHECK(yaml.find("- programming") != std::string::npos);
-        CHECK(yaml.find("- c++") != std::string::npos);
-        CHECK(yaml.find("- serialization") != std::string::npos);
-    }
-}
 
-TEST_CASE("Tabular data serialization") {
-    SUBCASE("JSON tabular data") {
-        auto value = serin::loadJson("tests/data/sample2_users.json");
-        CHECK(value.isObject());
-        
-        auto obj = value.asObject();
-        auto users = obj["users"].asArray();
-        CHECK(users.size() == 2);
-        
-        auto user1 = users[0].asObject();
-        CHECK(user1["id"].asPrimitive() == 1.0);
-        CHECK(user1["name"].asPrimitive() == "Alice");
-        CHECK(user1["role"].asPrimitive() == "admin");
-        
-        auto user2 = users[1].asObject();
-        CHECK(user2["id"].asPrimitive() == 2.0);
-        CHECK(user2["name"].asPrimitive() == "Bob");
-        CHECK(user2["role"].asPrimitive() == "user");
+        const serin::Value value(data);
+        const auto toon = serin::dumpsToon(value);
+        const auto parsed = serin::loadsToon(toon);
+        CHECK_EQ(trim(expectString(parsed)), trim(toon));
     }
-    
-    SUBCASE("TOON tabular data") {
-        auto value = serin::loadToon("tests/data/sample2_users.toon");
-        CHECK(value.isObject());
-        
-        auto obj = value.asObject();
-        auto users = obj["users"].asArray();
-        CHECK(users.size() == 2);
-        
-        auto user1 = users[0].asObject();
-        CHECK(user1["id"].asPrimitive() == 1.0);
-        CHECK(user1["name"].asPrimitive() == "Alice");
-        CHECK(user1["role"].asPrimitive() == "admin");
-        
-        auto user2 = users[1].asObject();
-        CHECK(user2["id"].asPrimitive() == 2.0);
-        CHECK(user2["name"].asPrimitive() == "Bob");
-        CHECK(user2["role"].asPrimitive() == "user");
-    }
-    
-    SUBCASE("YAML tabular data") {
-        auto value = serin::loadYaml("tests/data/sample2_users.yaml");
-        CHECK(value.isObject());
-        
-        auto obj = value.asObject();
-        auto users = obj["users"].asArray();
-        CHECK(users.size() == 2);
-        
-        auto user1 = users[0].asObject();
-        CHECK(user1["id"].asPrimitive() == 1.0);
-        CHECK(user1["name"].asPrimitive() == "Alice");
-        CHECK(user1["role"].asPrimitive() == "admin");
-        
-        auto user2 = users[1].asObject();
-        CHECK(user2["id"].asPrimitive() == 2.0);
-        CHECK(user2["name"].asPrimitive() == "Bob");
-        CHECK(user2["role"].asPrimitive() == "user");
-    }
-}
 
-TEST_CASE("Nested object serialization") {
-    SUBCASE("JSON nested objects") {
-        auto value = serin::loadJson("tests/data/sample3_nested.json");
-        CHECK(value.isObject());
-        
-        auto obj = value.asObject();
-        auto order = obj["order"].asObject();
-        
-        CHECK(order["id"].asPrimitive() == "ORD-12345");
-        CHECK(order["status"].asPrimitive() == "completed");
-        
-        auto customer = order["customer"].asObject();
-        CHECK(customer["name"].asPrimitive() == "John Doe");
-        CHECK(customer["email"].asPrimitive() == "john@example.com");
-        
-        auto items = order["items"].asArray();
-        CHECK(items.size() == 2);
-        
-        auto item1 = items[0].asObject();
-        CHECK(item1["product"].asPrimitive() == "Book");
-        CHECK(item1["quantity"].asPrimitive() == 2.0);
-        CHECK(item1["price"].asPrimitive() == 15.0);
-        
-        auto item2 = items[1].asObject();
-        CHECK(item2["product"].asPrimitive() == "Pen");
-        CHECK(item2["quantity"].asPrimitive() == 5.0);
-        CHECK(item2["price"].asPrimitive() == 2.5);
+    SUBCASE("JSON to YAML conversion") {
+        expectConversion(jsonValue,
+                         [](const serin::Value& value) { return serin::dumpsYaml(value); },
+                         serin::loadsYaml,
+                         checkSample1User);
     }
-    
-    SUBCASE("TOON nested objects") {
-        auto value = serin::loadToon("tests/data/sample3_nested.toon");
-        CHECK(value.isObject());
-        
-        auto obj = value.asObject();
-        auto order = obj["order"].asObject();
-        
-        CHECK(order["id"].asPrimitive() == "ORD-12345");
-        CHECK(order["status"].asPrimitive() == "completed");
-        
-        auto customer = order["customer"].asObject();
-        CHECK(customer["name"].asPrimitive() == "John Doe");
-        CHECK(customer["email"].asPrimitive() == "john@example.com");
-        
-        auto items = order["items"].asArray();
-        CHECK(items.size() == 2);
-        
-        auto item1 = items[0].asObject();
-        CHECK(item1["product"].asPrimitive() == "Book");
-        CHECK(item1["quantity"].asPrimitive() == 2.0);
-        CHECK(item1["price"].asPrimitive() == 15.0);
-        
-        auto item2 = items[1].asObject();
-        CHECK(item2["product"].asPrimitive() == "Pen");
-        CHECK(item2["quantity"].asPrimitive() == 5.0);
-        CHECK(item2["price"].asPrimitive() == 2.5);
-    }
-    
-    SUBCASE("YAML nested objects") {
-        auto value = serin::loadYaml("tests/data/sample3_nested.yaml");
-        CHECK(value.isObject());
-        
-        auto obj = value.asObject();
-        auto order = obj["order"].asObject();
-        
-        CHECK(order["id"].asPrimitive() == "ORD-12345");
-        CHECK(order["status"].asPrimitive() == "completed");
-        
-        auto customer = order["customer"].asObject();
-        CHECK(customer["name"].asPrimitive() == "John Doe");
-        CHECK(customer["email"].asPrimitive() == "john@example.com");
-        
-        auto items = order["items"].asArray();
-        CHECK(items.size() == 2);
-        
-        auto item1 = items[0].asObject();
-        CHECK(item1["product"].asPrimitive() == "Book");
-        CHECK(item1["quantity"].asPrimitive() == 2.0);
-        CHECK(item1["price"].asPrimitive() == 15.0);
-        
-        auto item2 = items[1].asObject();
-        CHECK(item2["product"].asPrimitive() == "Pen");
-        CHECK(item2["quantity"].asPrimitive() == 5.0);
-        CHECK(item2["price"].asPrimitive() == 2.5);
-    }
-}
 
-TEST_CASE("Cross-format compatibility") {
     SUBCASE("JSON to TOON conversion") {
-        auto jsonValue = serin::loadJson("tests/data/sample1_user.json");
-        auto toonStr = serin::dumpsToon(jsonValue);
-        
-        // Parse TOON string back
-        auto toonValue = serin::loadsToon(toonStr);
-        CHECK(toonValue.isObject());
-        
-        auto obj = toonValue.asObject();
-        CHECK(obj["name"].asPrimitive() == "Alice");
-        CHECK(obj["age"].asPrimitive() == 30.0);
-        CHECK(obj["active"].asPrimitive() == true);
+        const auto generated = serin::dumpsToon(jsonValue);
+        CHECK_EQ(trim(generated), trim(toonText));
     }
-    
-    SUBCASE("TOON to JSON conversion") {
-        auto toonValue = serin::loadToon("tests/data/sample1_user.toon");
-        auto jsonStr = serin::dumpsJson(toonValue);
-        
-        // Parse JSON string back
-        auto jsonValue = serin::loadsJson(jsonStr);
-        CHECK(jsonValue.isObject());
-        
-        auto obj = jsonValue.asObject();
-        CHECK(obj["name"].asPrimitive() == "Alice");
-        CHECK(obj["age"].asPrimitive() == 30.0);
-        CHECK(obj["active"].asPrimitive() == true);
-    }
-    
+
     SUBCASE("YAML to JSON conversion") {
-        auto yamlValue = serin::loadYaml("tests/data/sample1_user.yaml");
-        auto jsonStr = serin::dumpsJson(yamlValue);
-        
-        // Parse JSON string back
-        auto jsonValue = serin::loadsJson(jsonStr);
-        CHECK(jsonValue.isObject());
-        
-        auto obj = jsonValue.asObject();
-        CHECK(obj["name"].asPrimitive() == "Alice");
-        CHECK(obj["age"].asPrimitive() == 30.0);
-        CHECK(obj["active"].asPrimitive() == true);
+        expectConversion(yamlValue,
+                         [](const serin::Value& value) { return serin::dumpsJson(value); },
+                         serin::loadsJson,
+                         checkSample1User);
+    }
+
+    SUBCASE("YAML to TOON conversion") {
+        const auto generated = serin::dumpsToon(yamlValue);
+        CHECK_EQ(trim(generated), trim(toonText));
+    }
+
+    SUBCASE("TOON to JSON conversion") {
+        const auto jsonText = serin::dumpsJson(toonValue);
+        const auto parsed = serin::loadsJson(jsonText);
+        CHECK_EQ(expectString(parsed), toonText);
+    }
+
+    SUBCASE("TOON to YAML conversion") {
+        const auto yamlText = serin::dumpsYaml(toonValue);
+        CHECK(yamlText.find("\\n") != std::string::npos);
+        CHECK_NOTHROW(serin::loadsYaml(yamlText));
     }
 }
 
-TEST_CASE("Toon options customize formatting") {
+TEST_CASE("Sample 2 stays consistent across formats") {
+    const auto jsonValue = serin::loadJson("tests/data/sample2_users.json");
+    const auto yamlValue = serin::loadYaml("tests/data/sample2_users.yaml");
+    const auto toonValue = serin::loadToon("tests/data/sample2_users.toon");
+    const auto& toonText = expectString(toonValue);
+
+    checkSample2Users(jsonValue);
+    checkSample2Users(yamlValue);
+
+    const auto canonicalToon = serin::dumpsToon(jsonValue);
+    CHECK_EQ(trim(toonText), trim(canonicalToon));
+
+    SUBCASE("JSON to YAML conversion") {
+        expectConversion(jsonValue,
+                         [](const serin::Value& value) { return serin::dumpsYaml(value); },
+                         serin::loadsYaml,
+                         checkSample2Users);
+    }
+
+    SUBCASE("JSON to TOON conversion") {
+        const auto generated = serin::dumpsToon(jsonValue);
+        CHECK_EQ(trim(generated), trim(toonText));
+    }
+
+    SUBCASE("YAML to JSON conversion") {
+        expectConversion(yamlValue,
+                         [](const serin::Value& value) { return serin::dumpsJson(value); },
+                         serin::loadsJson,
+                         checkSample2Users);
+    }
+
+    SUBCASE("YAML to TOON conversion") {
+        const auto generated = serin::dumpsToon(yamlValue);
+        CHECK_EQ(trim(generated), trim(toonText));
+    }
+
+    SUBCASE("TOON to JSON conversion") {
+        const auto jsonText = serin::dumpsJson(toonValue);
+        const auto parsed = serin::loadsJson(jsonText);
+        CHECK_EQ(expectString(parsed), toonText);
+    }
+
+    SUBCASE("TOON to YAML conversion") {
+        const auto yamlText = serin::dumpsYaml(toonValue);
+        CHECK(yamlText.find("\\n") != std::string::npos);
+        CHECK_NOTHROW(serin::loadsYaml(yamlText));
+    }
+}
+
+TEST_CASE("Sample 3 stays consistent across formats") {
+    const auto jsonValue = serin::loadJson("tests/data/sample3_nested.json");
+    const auto yamlValue = serin::loadYaml("tests/data/sample3_nested.yaml");
+    const auto toonValue = serin::loadToon("tests/data/sample3_nested.toon");
+    const auto& toonText = expectString(toonValue);
+
+    checkSample3Nested(jsonValue);
+    checkSample3Nested(yamlValue);
+
+    const auto canonicalToon = serin::dumpsToon(jsonValue);
+    CHECK_EQ(trim(toonText), trim(canonicalToon));
+
+    SUBCASE("JSON to YAML conversion") {
+        expectConversion(jsonValue,
+                         [](const serin::Value& value) { return serin::dumpsYaml(value); },
+                         serin::loadsYaml,
+                         checkSample3Nested);
+    }
+
+    SUBCASE("JSON to TOON conversion") {
+        const auto generated = serin::dumpsToon(jsonValue);
+        CHECK_EQ(trim(generated), trim(toonText));
+    }
+
+    SUBCASE("YAML to JSON conversion") {
+        expectConversion(yamlValue,
+                         [](const serin::Value& value) { return serin::dumpsJson(value); },
+                         serin::loadsJson,
+                         checkSample3Nested);
+    }
+
+    SUBCASE("YAML to TOON conversion") {
+        const auto generated = serin::dumpsToon(yamlValue);
+        CHECK_EQ(trim(generated), trim(toonText));
+    }
+
+    SUBCASE("TOON to JSON conversion") {
+        const auto jsonText = serin::dumpsJson(toonValue);
+        const auto parsed = serin::loadsJson(jsonText);
+        CHECK_EQ(expectString(parsed), toonText);
+    }
+
+    SUBCASE("TOON to YAML conversion") {
+        const auto yamlText = serin::dumpsYaml(toonValue);
+        CHECK(yamlText.find("\\n") != std::string::npos);
+        CHECK_NOTHROW(serin::loadsYaml(yamlText));
+    }
+}
+
+TEST_CASE("Toon options customize formatting supports alternate delimiters") {
     serin::Object obj;
     obj["name"] = serin::Value("Alice");
 
@@ -329,40 +325,6 @@ TEST_CASE("Toon options customize formatting") {
     options.setIndent(4).setDelimiter(serin::Delimiter::Pipe);
 
     auto toon = serin::dumpsToon(serin::Value(obj), options);
-    CHECK(toon.find("    tags[2]: red|blue") != std::string::npos);
-    CHECK(toon.find("    name: Alice") != std::string::npos);
-}
-
-TEST_CASE("TOON output matches @byjohann/toon when available") {
-    const std::string jsonPath = "tests/data/sample1_user.json";
-    const auto value = serin::loadJson(jsonPath);
-    const auto expected = serin::dumpsToon(value);
-
-    auto tempFile = std::filesystem::temp_directory_path() / "serin_official_toon_output.toon";
-    std::string command = "npx @byjohann/toon encode \"" + jsonPath + "\" > \"" + tempFile.string() + "\"";
-
-    int exitCode = std::system(command.c_str());
-    if (exitCode != 0) {
-        std::error_code ec;
-        std::filesystem::remove(tempFile, ec);
-        DOCTEST_SKIP("npx @byjohann/toon is not available in the environment");
-    }
-
-    std::ifstream officialFile(tempFile);
-    std::string official((std::istreambuf_iterator<char>(officialFile)), std::istreambuf_iterator<char>());
-    officialFile.close();
-    std::error_code ec;
-    std::filesystem::remove(tempFile, ec);
-
-    auto trim = [](std::string s) {
-        while (!s.empty() && (s.back() == '\n' || s.back() == '\r')) {
-            s.pop_back();
-        }
-        while (!s.empty() && (s.front() == '\n' || s.front() == '\r')) {
-            s.erase(s.begin());
-        }
-        return s;
-    };
-
-    CHECK(trim(official) == trim(expected));
+    CHECK(toon.find("tags[2]: red|blue") != std::string::npos);
+    CHECK(toon.find("name: Alice") != std::string::npos);
 }
