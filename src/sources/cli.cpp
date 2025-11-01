@@ -1,4 +1,4 @@
-#include "includes/serin.h"
+#include "serin.h"
 #include <iostream>
 #include <fstream>
 #include <filesystem>
@@ -85,39 +85,29 @@ int main(int argc, char* argv[]) {
         
         if (extension == ".json") {
             // JSON to TOON conversion
-            serin::Value jsonData = serin::parseJsonFromFile(inputFile);
-            std::string toonContent = serin::encode(jsonData);
+            serin::Value jsonData = serin::loadJson(inputFile);
+            std::string toonContent = serin::dumpsToon(jsonData);
             
             if (outputFile.empty()) {
                 // Output to stdout
                 std::cout << toonContent << std::endl;
             } else {
                 // Output to file
-                std::ofstream file(outputFile);
-                if (!file.is_open()) {
-                    std::cerr << "Error: Cannot open output file: " << outputFile << std::endl;
-                    return 1;
-                }
-                file << toonContent;
+                serin::dumpToon(jsonData, outputFile);
                 std::cout << "Converted " << inputFile << " to " << outputFile << std::endl;
             }
         }
         else if (extension == ".toon") {
             // TOON to JSON conversion
-            serin::Value decoded = serin::decodeFromFile(inputFile);
-            std::string jsonContent = serin::toJsonString(decoded);
+            serin::Value decoded = serin::loadToon(inputFile);
+            std::string jsonContent = serin::dumpsJson(decoded);
             
             if (outputFile.empty()) {
                 // Output to stdout
                 std::cout << jsonContent << std::endl;
             } else {
                 // Output to file
-                std::ofstream file(outputFile);
-                if (!file.is_open()) {
-                    std::cerr << "Error: Cannot open output file: " << outputFile << std::endl;
-                    return 1;
-                }
-                file << jsonContent;
+                serin::dumpJson(decoded, outputFile);
                 std::cout << "Converted " << inputFile << " to " << outputFile << std::endl;
             }
         }

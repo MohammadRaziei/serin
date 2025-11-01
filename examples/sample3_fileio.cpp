@@ -22,16 +22,16 @@ int main() {
 
     try {
         // Save to TOON file
-        serin::encodeToFile(value, "sample_output.toon");
+        serin::dumpToon(value, "sample_output.toon");
         std::cout << "Saved data to sample_output.toon" << std::endl;
         
         // Load from TOON file
-        serin::Value loaded = serin::decodeFromFile("sample_output.toon");
+        serin::Value loaded = serin::loadToon("sample_output.toon");
         std::cout << "Loaded data from sample_output.toon" << std::endl;
         
         // Display loaded data
         std::cout << "Loaded data:" << std::endl;
-        std::cout << serin::encode(loaded) << std::endl;
+        std::cout << serin::dumpsToon(loaded) << std::endl;
         
         // Test JSON file operations
         serin::dumpJson(value, "sample_output.json");
