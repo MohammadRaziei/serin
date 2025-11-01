@@ -50,6 +50,9 @@ target_compile_options(serin PRIVATE
 # Build examples
 option(BUILD_EXAMPLES "Build example programs" ON)
 
+
+include(SetupPython)
+
 if (BUILD_EXAMPLES)
     message(STATUS "Building examples")
 
