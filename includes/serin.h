@@ -3,9 +3,10 @@
 #include <string>
 #include <variant>
 #include <vector>
-#include <map>
 #include <memory>
 #include <optional>
+
+#include "ordered_map.h"
 
 namespace serin {
 
@@ -14,7 +15,7 @@ struct Value;
 
 // TOON value types
 using Primitive = std::variant<std::string, double, int64_t, bool, std::nullptr_t>;
-using Object = std::map<std::string, Value>;
+using Object = tsl::ordered_map<std::string, Value>;
 using Array = std::vector<Value>;
 
 struct Value {

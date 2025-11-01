@@ -257,7 +257,7 @@ std::string encodeArrayOfObjects(const std::string& key, const Array& array, con
                 values.push_back(nullptr);
             }
         }
-        oss << encodeAndJoinPrimitives(values, options.delimiter) << NEWLINE;
+        oss << std::string(options.indent, SPACE) << encodeAndJoinPrimitives(values, options.delimiter) << NEWLINE;
     }
 
     return oss.str();
@@ -267,6 +267,7 @@ std::string encodeObject(const Object& obj, const EncodeOptions& options, int de
     std::ostringstream oss;
     const std::string indent(depth * options.indent, SPACE);
 
+    // The ordered_map preserves insertion order, so we can just iterate normally
     for (const auto& [key, value] : obj) {
         oss << indent << encodeValue(key, value, options, depth) << NEWLINE;
     }
