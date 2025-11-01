@@ -117,22 +117,22 @@ Serin includes a powerful command-line tool for file conversion:
 
 ```bash
 # Show help and available options
-serin-cli --help
+serin --help
 
 # Show the current Serin version
-serin-cli --version
+serin --version
 
 # Convert JSON to TOON and write to a file (format inferred from extension)
-serin-cli input.json -o output.toon
+serin input.json -o output.toon
 
 # Output a conversion directly to the terminal (defaults to TOON)
-serin-cli input.json
+serin input.json
 
 # Select an explicit output format when streaming to stdout
-serin-cli input.json -t yaml
+serin input.json -t yaml
 
 # Control indentation for structured formats
-serin-cli data.yaml -t json -i 4
+serin data.yaml -t json -i 4
 ```
 
 ## 📊 TOON Format
