@@ -65,77 +65,77 @@ Value loadsJson(const std::string& jsonString) {
         return loadsJson(buffer.str());
     }
 
-#define BUILD_YYJSON
-#ifndef BUILD_YYJSON
-static void dumpsJsonImpl(const Value& value, std::ostringstream& out, int indent, int level) {
-        auto writeIndent = [&](int n) {
-            if (indent > 0) {
-                for (int i = 0; i < n; ++i)
-                    out << ' ';
-            }
-        };
-
-        auto newline = [&]() {
-            if (indent > 0) out << "\n";
-        };
-
-        if (value.isPrimitive()) {
-            const auto& p = value.asPrimitive();
-            std::visit([&](auto&& arg) {
-                using T = std::decay_t<decltype(arg)>;
-                if constexpr (std::is_same_v<T, std::nullptr_t>) out << "null";
-                else if constexpr (std::is_same_v<T, bool>) out << (arg ? "true" : "false");
-                else if constexpr (std::is_same_v<T, std::string>) out << "\"" << arg << "\"";
-                else out << arg;
-            }, p);
-        }
-        else if (value.isArray()) {
-            const Array& arr = value.asArray();
-            if (arr.empty()) { out << "[]"; return; }
-
-            out << "[";
-            newline();
-
-            for (size_t i = 0; i < arr.size(); ++i) {
-                writeIndent((level + 1) * indent);
-                dumpsJsonImpl(arr[i], out, indent, level + 1);
-                if (i + 1 < arr.size()) out << ",";
-                newline();
-            }
-
-            writeIndent(level * indent);
-            out << "]";
-        }
-        else if (value.isObject()) {
-            const Object& obj = value.asObject();
-            if (obj.empty()) { out << "{}"; return; }
-
-            out << "{";
-            newline();
-
-            size_t idx = 0;
-            for (const auto& kv : obj) {
-                writeIndent((level + 1) * indent);
-                out << "\"" << kv.first << "\":";
-                if (indent > 0) out << " ";
-                dumpsJsonImpl(kv.second, out, indent, level + 1);
-                if (idx + 1 < obj.size()) out << ",";
-                newline();
-                ++idx;
-            }
-
-            writeIndent(level * indent);
-            out << "}";
-        }
-    }
-    std::string dumpsJson(const Value& value, int indent) {
-        std::ostringstream out;
-        if (indent < 0) indent = 0;
-        dumpsJsonImpl(value, out, indent, 0);
-        return out.str();
-    }
-
-#else
+//#define BUILD_YYJSON
+//#ifndef BUILD_YYJSON
+//static void dumpsJsonImpl(const Value& value, std::ostringstream& out, int indent, int level) {
+//        auto writeIndent = [&](int n) {
+//            if (indent > 0) {
+//                for (int i = 0; i < n; ++i)
+//                    out << ' ';
+//            }
+//        };
+//
+//        auto newline = [&]() {
+//            if (indent > 0) out << "\n";
+//        };
+//
+//        if (value.isPrimitive()) {
+//            const auto& p = value.asPrimitive();
+//            std::visit([&](auto&& arg) {
+//                using T = std::decay_t<decltype(arg)>;
+//                if constexpr (std::is_same_v<T, std::nullptr_t>) out << "null";
+//                else if constexpr (std::is_same_v<T, bool>) out << (arg ? "true" : "false");
+//                else if constexpr (std::is_same_v<T, std::string>) out << "\"" << arg << "\"";
+//                else out << arg;
+//            }, p);
+//        }
+//        else if (value.isArray()) {
+//            const Array& arr = value.asArray();
+//            if (arr.empty()) { out << "[]"; return; }
+//
+//            out << "[";
+//            newline();
+//
+//            for (size_t i = 0; i < arr.size(); ++i) {
+//                writeIndent((level + 1) * indent);
+//                dumpsJsonImpl(arr[i], out, indent, level + 1);
+//                if (i + 1 < arr.size()) out << ",";
+//                newline();
+//            }
+//
+//            writeIndent(level * indent);
+//            out << "]";
+//        }
+//        else if (value.isObject()) {
+//            const Object& obj = value.asObject();
+//            if (obj.empty()) { out << "{}"; return; }
+//
+//            out << "{";
+//            newline();
+//
+//            size_t idx = 0;
+//            for (const auto& kv : obj) {
+//                writeIndent((level + 1) * indent);
+//                out << "\"" << kv.first << "\":";
+//                if (indent > 0) out << " ";
+//                dumpsJsonImpl(kv.second, out, indent, level + 1);
+//                if (idx + 1 < obj.size()) out << ",";
+//                newline();
+//                ++idx;
+//            }
+//
+//            writeIndent(level * indent);
+//            out << "}";
+//        }
+//    }
+//    std::string dumpsJson(const Value& value, int indent) {
+//        std::ostringstream out;
+//        if (indent < 0) indent = 0;
+//        dumpsJsonImpl(value, out, indent, 0);
+//        return out.str();
+//    }
+//
+//#else
     static yyjson_mut_val* buildYyjson(yyjson_mut_doc* doc, const Value& val) {
         if (val.isPrimitive()) {
             const auto& p = val.asPrimitive();
@@ -179,18 +179,14 @@ static void dumpsJsonImpl(const Value& value, std::ostringstream& out, int inden
         yyjson_mut_val* root = buildYyjson(doc, value);
         yyjson_mut_doc_set_root(doc, root);
 
-        yyjson_write_flag flag = (indent < 0)
-                                 ? YYJSON_WRITE_NOFLAG
-                                 : YYJSON_WRITE_PRETTY;
-
-        char* json_cstr = yyjson_mut_write(doc, flag, nullptr);
+        char* json_cstr = yyjson_mut_write(doc, indent, nullptr);
         std::string json(json_cstr);
         free(json_cstr);
         yyjson_mut_doc_free(doc);
         return json;
     }
 
-#endif
+//#endif
 
 
 

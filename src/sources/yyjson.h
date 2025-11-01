@@ -1198,6 +1198,16 @@ static const yyjson_write_flag YYJSON_WRITE_PRETTY_TWO_SPACES       = 1 << 6;
     This can be helpful for text editors or NDJSON. */
 static const yyjson_write_flag YYJSON_WRITE_NEWLINE_AT_END          = 1 << 7;
 
+/**
+    Bits used to encode indentation width when pretty printing is enabled.
+    The stored value is `(indent + 1)` to distinguish between zero indent and
+    the absence of an explicit indentation request. */
+#define YYJSON_WRITE_INDENT_SHIFT 8
+#define YYJSON_WRITE_INDENT_MASK  ((yyjson_write_flag)0x00FFFF00)
+
+/** Maximum supported indentation width (in spaces). */
+#define YYJSON_WRITE_MAX_INDENT   0xFFFE
+
 
 
 /** The highest 8 bits of `yyjson_write_flag` and real number value's `tag`
@@ -1384,8 +1394,19 @@ yyjson_api size_t yyjson_write_buf(char *buf, size_t buf_len,
     When it's no longer needed, it should be freed with free().
  */
 yyjson_api_inline char *yyjson_write(const yyjson_doc *doc,
-                                     yyjson_write_flag flg,
+                                     yyjson_write_flag indent,
                                      size_t *len) {
+    int32_t indent_width = (int32_t)indent;
+    yyjson_write_flag flg = YYJSON_WRITE_NOFLAG;
+    if (indent_width >= 0) {
+        uint32_t width = (uint32_t)indent_width;
+        if (width > YYJSON_WRITE_MAX_INDENT) width = YYJSON_WRITE_MAX_INDENT;
+        yyjson_write_flag stored =
+            ((yyjson_write_flag)(width + 1) << YYJSON_WRITE_INDENT_SHIFT) &
+            YYJSON_WRITE_INDENT_MASK;
+        flg = YYJSON_WRITE_PRETTY | stored;
+        if (width == 2) flg |= YYJSON_WRITE_PRETTY_TWO_SPACES;
+    }
     return yyjson_write_opts(doc, flg, NULL, len, NULL);
 }
 
@@ -1513,8 +1534,19 @@ yyjson_api size_t yyjson_mut_write_buf(char *buf, size_t buf_len,
     When it's no longer needed, it should be freed with free().
  */
 yyjson_api_inline char *yyjson_mut_write(const yyjson_mut_doc *doc,
-                                         yyjson_write_flag flg,
+                                         yyjson_write_flag indent,
                                          size_t *len) {
+    int32_t indent_width = (int32_t)indent;
+    yyjson_write_flag flg = YYJSON_WRITE_NOFLAG;
+    if (indent_width >= 0) {
+        uint32_t width = (uint32_t)indent_width;
+        if (width > YYJSON_WRITE_MAX_INDENT) width = YYJSON_WRITE_MAX_INDENT;
+        yyjson_write_flag stored =
+            ((yyjson_write_flag)(width + 1) << YYJSON_WRITE_INDENT_SHIFT) &
+            YYJSON_WRITE_INDENT_MASK;
+        flg = YYJSON_WRITE_PRETTY | stored;
+        if (width == 2) flg |= YYJSON_WRITE_PRETTY_TWO_SPACES;
+    }
     return yyjson_mut_write_opts(doc, flg, NULL, len, NULL);
 }
 
