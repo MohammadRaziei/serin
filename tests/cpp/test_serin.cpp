@@ -2,8 +2,12 @@
 #include "doctest.h"
 #include "serin.h"
 
+#include <cstdlib>
+#include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <sstream>
+#include <system_error>
 
 TEST_CASE("Basic JSON serialization") {
     SUBCASE("Load JSON from file") {
@@ -310,4 +314,55 @@ TEST_CASE("Cross-format compatibility") {
         CHECK(obj["age"].asPrimitive() == 30.0);
         CHECK(obj["active"].asPrimitive() == true);
     }
+}
+
+TEST_CASE("Toon options customize formatting") {
+    serin::Object obj;
+    obj["name"] = serin::Value("Alice");
+
+    serin::Array tags;
+    tags.emplace_back(serin::Value("red"));
+    tags.emplace_back(serin::Value("blue"));
+    obj["tags"] = serin::Value(tags);
+
+    serin::ToonOptions options;
+    options.setIndent(4).setDelimiter(serin::Delimiter::Pipe);
+
+    auto toon = serin::dumpsToon(serin::Value(obj), options);
+    CHECK(toon.find("    tags[2]: red|blue") != std::string::npos);
+    CHECK(toon.find("    name: Alice") != std::string::npos);
+}
+
+TEST_CASE("TOON output matches @byjohann/toon when available") {
+    const std::string jsonPath = "tests/data/sample1_user.json";
+    const auto value = serin::loadJson(jsonPath);
+    const auto expected = serin::dumpsToon(value);
+
+    auto tempFile = std::filesystem::temp_directory_path() / "serin_official_toon_output.toon";
+    std::string command = "npx @byjohann/toon encode \"" + jsonPath + "\" > \"" + tempFile.string() + "\"";
+
+    int exitCode = std::system(command.c_str());
+    if (exitCode != 0) {
+        std::error_code ec;
+        std::filesystem::remove(tempFile, ec);
+        DOCTEST_SKIP("npx @byjohann/toon is not available in the environment");
+    }
+
+    std::ifstream officialFile(tempFile);
+    std::string official((std::istreambuf_iterator<char>(officialFile)), std::istreambuf_iterator<char>());
+    officialFile.close();
+    std::error_code ec;
+    std::filesystem::remove(tempFile, ec);
+
+    auto trim = [](std::string s) {
+        while (!s.empty() && (s.back() == '\n' || s.back() == '\r')) {
+            s.pop_back();
+        }
+        while (!s.empty() && (s.front() == '\n' || s.front() == '\r')) {
+            s.erase(s.begin());
+        }
+        return s;
+    };
+
+    CHECK(trim(official) == trim(expected));
 }

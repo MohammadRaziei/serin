@@ -116,18 +116,23 @@ print(f"Loaded data: {loaded_data}")
 Serin includes a powerful command-line tool for file conversion:
 
 ```bash
-# Convert JSON to TOON
-toon input.json -o output.toon
+# Show help and available options
+serin-cli --help
 
-# Convert TOON to JSON
-toon data.toon -o output.json
+# Show the current Serin version
+serin-cli --version
 
-# Output to terminal
-toon input.json
+# Convert JSON to TOON and write to a file (format inferred from extension)
+serin-cli input.json -o output.toon
 
-# Auto-detect based on file extension
-toon input.json              # TOON output
-toon data.toon              # JSON output
+# Output a conversion directly to the terminal (defaults to TOON)
+serin-cli input.json
+
+# Select an explicit output format when streaming to stdout
+serin-cli input.json -t yaml
+
+# Control indentation for structured formats
+serin-cli data.yaml -t json -i 4
 ```
 
 ## 📊 TOON Format
@@ -186,6 +191,20 @@ The project includes multiple examples for quick start:
 - `serin::Object` - Object (dictionary)
 - `serin::Array` - Array
 - `serin::Primitive` - Primitive values (string, number, boolean, null)
+- `serin::ToonOptions` - Configure TOON serialization (indentation, delimiter, strict mode)
+
+### TOON Configuration
+
+```cpp
+serin::ToonOptions options;
+options.setIndent(4).setDelimiter(serin::Delimiter::Pipe);
+
+auto toon = serin::dumpsToon(value, options);
+```
+
+To confirm that Serin's TOON output matches the reference implementation, run the C++ tests with
+`npx` available. The `TOON output matches @byjohann/toon when available` test will invoke
+`npx @byjohann/toon` to compare the serialized output whenever the package can be downloaded.
 
 ## 🧪 Tests
 

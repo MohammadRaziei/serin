@@ -95,10 +95,35 @@ NB_MODULE(NB_MODULE_NAME, m) {
     .def("is_array", &serin::Value::isArray)
     .def("is_primitive", &serin::Value::isPrimitive);
 
+    nb::enum_<serin::Delimiter>(m, "Delimiter")
+        .value("Comma", serin::Delimiter::Comma)
+        .value("Tab", serin::Delimiter::Tab)
+        .value("Pipe", serin::Delimiter::Pipe);
+
+    nb::class_<serin::ToonOptions>(m, "ToonOptions")
+        .def(nb::init<>())
+        .def(nb::init<int>(), nb::arg("indent"))
+        .def("set_indent", &serin::ToonOptions::setIndent, nb::arg("indent"), nb::rv_policy::reference_internal)
+        .def("set_delimiter", &serin::ToonOptions::setDelimiter, nb::arg("delimiter"), nb::rv_policy::reference_internal)
+        .def("set_length_marker", &serin::ToonOptions::setLengthMarker, nb::arg("enabled"), nb::rv_policy::reference_internal)
+        .def("set_strict", &serin::ToonOptions::setStrict, nb::arg("strict"), nb::rv_policy::reference_internal)
+        .def("indent", &serin::ToonOptions::indent)
+        .def("delimiter", &serin::ToonOptions::delimiter)
+        .def("length_marker", &serin::ToonOptions::lengthMarker)
+        .def("strict", &serin::ToonOptions::strict);
+
     m.def("value_loads_json", &serin::loadsJson);
     m.def("value_dumps_json", &serin::dumpsJson);
-    m.def("value_loads_toon", &serin::loadsToon);
-    m.def("value_dumps_toon", &serin::dumpsToon);
+    m.def("value_loads_toon",
+          [](const std::string& toon, const serin::ToonOptions& options) {
+              return serin::loadsToon(toon, options);
+          },
+          nb::arg("toon"), nb::arg("options") = serin::ToonOptions());
+    m.def("value_dumps_toon",
+          [](const serin::Value& value, const serin::ToonOptions& options) {
+              return serin::dumpsToon(value, options);
+          },
+          nb::arg("value"), nb::arg("options") = serin::ToonOptions());
 
     m.def("loads_json", &serin::loadsJson)
 

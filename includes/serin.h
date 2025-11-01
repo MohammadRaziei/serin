@@ -48,17 +48,26 @@ enum class Delimiter {
     Pipe = '|'
 };
 
-// Encode options
-struct EncodeOptions {
-    int indent = 2;
-    Delimiter delimiter = Delimiter::Comma;
-    bool lengthMarker = false;
-};
+struct ToonOptions {
+public:
+    ToonOptions() = default;
+    explicit ToonOptions(int indent);
 
-// Decode options
-struct DecodeOptions {
-    int indent = 2;
-    bool strict = true;
+    ToonOptions& setIndent(int indent);
+    ToonOptions& setDelimiter(Delimiter delimiter);
+    ToonOptions& setLengthMarker(bool enabled);
+    ToonOptions& setStrict(bool strict);
+
+    [[nodiscard]] int indent() const;
+    [[nodiscard]] Delimiter delimiter() const;
+    [[nodiscard]] bool lengthMarker() const;
+    [[nodiscard]] bool strict() const;
+
+private:
+    int indent_ = 2;
+    Delimiter delimiter_ = Delimiter::Comma;
+    bool lengthMarker_ = false;
+    bool strict_ = true;
 };
 
 // Utility functions
@@ -74,10 +83,10 @@ std::string dumpsJson(const Value& value, int indent = 2);
 void dumpJson(const Value& value, const std::string& filename, int indent = 2);
 
 // TOON functions
-Value loadToon(const std::string& filename);
-Value loadsToon(const std::string& toonString);
-std::string dumpsToon(const Value& value, int indent = 2);
-void dumpToon(const Value& value, const std::string& filename, int indent = 2);
+Value loadToon(const std::string& filename, const ToonOptions& options = ToonOptions());
+Value loadsToon(const std::string& toonString, const ToonOptions& options = ToonOptions());
+std::string dumpsToon(const Value& value, const ToonOptions& options = ToonOptions());
+void dumpToon(const Value& value, const std::string& filename, const ToonOptions& options = ToonOptions());
 
 // YAML functions
 Value loadYaml(const std::string& filename);

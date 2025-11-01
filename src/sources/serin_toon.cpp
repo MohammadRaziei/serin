@@ -8,7 +8,71 @@
 
 namespace serin {
 
+ToonOptions::ToonOptions(int indent) {
+    setIndent(indent);
+}
+
+ToonOptions& ToonOptions::setIndent(int indent) {
+    indent_ = std::max(0, indent);
+    return *this;
+}
+
+ToonOptions& ToonOptions::setDelimiter(Delimiter delimiter) {
+    delimiter_ = delimiter;
+    return *this;
+}
+
+ToonOptions& ToonOptions::setLengthMarker(bool enabled) {
+    lengthMarker_ = enabled;
+    return *this;
+}
+
+ToonOptions& ToonOptions::setStrict(bool strict) {
+    strict_ = strict;
+    return *this;
+}
+
+int ToonOptions::indent() const {
+    return indent_;
+}
+
+Delimiter ToonOptions::delimiter() const {
+    return delimiter_;
+}
+
+bool ToonOptions::lengthMarker() const {
+    return lengthMarker_;
+}
+
+bool ToonOptions::strict() const {
+    return strict_;
+}
+
 namespace {
+struct EncodeOptions {
+    int indent = 2;
+    Delimiter delimiter = Delimiter::Comma;
+    bool lengthMarker = false;
+};
+
+struct DecodeOptions {
+    bool strict = true;
+};
+
+EncodeOptions makeEncodeOptions(const ToonOptions& options) {
+    EncodeOptions result;
+    result.indent = options.indent();
+    result.delimiter = options.delimiter();
+    result.lengthMarker = options.lengthMarker();
+    return result;
+}
+
+DecodeOptions makeDecodeOptions(const ToonOptions& options) {
+    DecodeOptions result;
+    result.strict = options.strict();
+    return result;
+}
+
 constexpr char COLON = ':';
 constexpr char SPACE = ' ';
 constexpr char OPEN_BRACKET = '[';
@@ -275,26 +339,20 @@ Value decodeFromFile(const std::string& inputFile, const DecodeOptions& options)
     return decode(buffer.str(), options);
 }
 
-Value loadToon(const std::string& filename) {
-    DecodeOptions options;
-    return decodeFromFile(filename, options);
+Value loadToon(const std::string& filename, const ToonOptions& options) {
+    return decodeFromFile(filename, makeDecodeOptions(options));
 }
 
-Value loadsToon(const std::string& toonString) {
-    DecodeOptions options;
-    return decode(toonString, options);
+Value loadsToon(const std::string& toonString, const ToonOptions& options) {
+    return decode(toonString, makeDecodeOptions(options));
 }
 
-std::string dumpsToon(const Value& value, int indent) {
-    EncodeOptions options;
-    options.indent = indent;
-    return encode(value, options);
+std::string dumpsToon(const Value& value, const ToonOptions& options) {
+    return encode(value, makeEncodeOptions(options));
 }
 
-void dumpToon(const Value& value, const std::string& filename, int indent) {
-    EncodeOptions options;
-    options.indent = indent;
-    encodeToFile(value, filename, options);
+void dumpToon(const Value& value, const std::string& filename, const ToonOptions& options) {
+    encodeToFile(value, filename, makeEncodeOptions(options));
 }
 
 } // namespace serin
