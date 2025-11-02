@@ -358,15 +358,7 @@ std::string encodeScalar(const Primitive &primitive) {
         } else if constexpr (std::is_same_v<T, double> ||
                              std::is_same_v<T, int64_t>) {
           std::ostringstream oss;
-          if constexpr (std::is_same_v<T, double>) {
-            if (std::isfinite(value) && std::floor(value) == value) {
-              oss << std::fixed << std::setprecision(1) << value;
-            } else {
-              oss << std::setprecision(std::numeric_limits<double>::digits10 + 1) << value;
-            }
-          } else {
-            oss << value;
-          }
+          oss << value;
           return oss.str();
         } else { // std::string
           if (!needsQuoting(value)) {

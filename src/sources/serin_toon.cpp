@@ -95,7 +95,7 @@ std::string encodePrimitive(const Primitive& primitive, Delimiter delimiter) {
             return NULL_LITERAL;
         } else if constexpr (std::is_same_v<T, bool>) {
             return value ? TRUE_LITERAL : FALSE_LITERAL;
-        } else if constexpr (std::is_same_v<T, double> || std::is_same_v<T, long int>) {
+        } else if constexpr (std::is_same_v<T, double> || std::is_same_v<T, int64_t>) {
             std::ostringstream oss;
             oss << value;
             return oss.str();
