@@ -7,9 +7,9 @@
 #include <cmath>
 #include <cstdlib>
 #include <fstream>
+#include <sstream>
 #include <stdexcept>
 #include <string_view>
-#include <type_traits>
 #include <utility>
 
 namespace serin {
