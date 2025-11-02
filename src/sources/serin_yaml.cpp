@@ -478,13 +478,7 @@ void dumpValue(const Value &value, int indent, int indentStep,
 } // namespace
 
 Value loadYaml(const std::string &filename) {
-  std::ifstream file(filename);
-  if (!file.is_open()) {
-    throw std::runtime_error("Cannot open YAML file: " + filename);
-  }
-  std::ostringstream buffer;
-  buffer << file.rdbuf();
-  return loadsYaml(buffer.str());
+  return loadsYaml(readStringFromFile(filename));
 }
 
 Value loadsYaml(const std::string &yamlString) {
@@ -504,11 +498,7 @@ std::string dumpsYaml(const Value &value, int indent [[maybe_unused]]) {
 }
 
 void dumpYaml(const Value &value, const std::string &filename, int indent) {
-  std::ofstream file(filename);
-  if (!file.is_open()) {
-    throw std::runtime_error("Cannot open YAML file for writing: " + filename);
-  }
-  file << dumpsYaml(value, indent);
+  writeStringToFile(dumpsYaml(value, indent), filename);
 }
 
 } // namespace serin

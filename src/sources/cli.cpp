@@ -16,7 +16,7 @@
 namespace fs = std::filesystem;
 
 namespace {
-constexpr const char *serinVersion = "0.1.0";
+constexpr const char *serinVersion = MACRO_STRINGIFY(SERIN_VERSION);
 
 enum class Format {
     Json,
@@ -112,7 +112,16 @@ void printHelp(const CLI::App &app) {
 } // namespace
 
 int main(int argc, char **argv) {
-    CLI::App app{"Serin - Serialization CLI"};
+    CLI::App app{"Serin - A modern C++ serialization library and CLI tool\n"
+                 "Version: " + std::string(serinVersion) + "\n"
+                 "\n"
+                 "Serin provides fast and flexible serialization between JSON, YAML, and Toon formats. "
+                 "It can convert between different serialization formats and manipulate structured data.\n"
+                 "\n"
+                 "Examples:\n"
+                 "  serin input.json -o output.yaml          # Convert JSON to YAML\n"
+                 "  serin input.yaml -t json                 # Convert YAML to JSON (stdout)\n"
+                 "  serin input.toon -o output.json -i 4     # Convert Toon to JSON with 4-space indent"};
 
     std::string inputPath;
     std::string outputPath;
@@ -120,12 +129,12 @@ int main(int argc, char **argv) {
     int indent = 2;
     bool showVersion = false;
 
-    app.set_help_flag("-h,--help", "Show this help message");
-    app.add_option("input", inputPath, "Path to the input document");
-    app.add_option("-o,--output", outputPath, "Path to the output document");
-    app.add_option("-t,--type", outputType, "Output format (" + availableFormats() + ")");
+    app.set_help_flag("-h,--help", "Show this help message and exit");
+    app.add_option("input", inputPath, "Path to the input document (required)");
+    app.add_option("-o,--output", outputPath, "Path to the output document (if omitted, prints to stdout)");
+    app.add_option("-t,--type", outputType, "Output format: " + availableFormats() + " (default: toon)");
     app.add_option("-i,--indent", indent, "Indent level for structured output (default: 2)");
-    app.add_flag("--version", showVersion, "Show version information");
+    app.add_flag("--version", showVersion, "Show version information and exit");
 
     if (argc == 1) {
         printHelp(app);
@@ -135,12 +144,11 @@ int main(int argc, char **argv) {
     try {
         app.parse(argc, argv);
     } catch (const CLI::CallForHelp &help) {
-        std::cout << help.what() << std::endl;
+        printHelp(app);
         return 0;
     } catch (const CLI::ParseError &error) {
         std::cerr << error.what() << std::endl;
-        std::cerr << std::endl;
-        printHelp(app);
+        std::cerr << "Use --help or -h for more information" << std::endl;
         return 1;
     }
 

@@ -111,4 +111,73 @@ bool isPrimitive(const Value& value) { return value.isPrimitive(); }
 bool isObject(const Value& value) { return value.isObject(); }
 bool isArray(const Value& value) { return value.isArray(); }
 
+// Generic file format functions (auto-detect format from file extension)
+Value load(const std::string& filename) {
+    // Extract file extension
+    std::filesystem::path filePath(filename);
+    std::string extension = filePath.extension().string();
+    
+    // Convert to lowercase for case-insensitive comparison
+    std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+    
+    // Route to appropriate loader based on file extension
+    if (extension == ".json") {
+        return loadJson(filename);
+    } else if (extension == ".toon") {
+        return loadToon(filename);
+    } else if (extension == ".yaml" || extension == ".yml") {
+        return loadYaml(filename);
+    } else {
+        throw std::runtime_error("Unsupported file format: " + extension + 
+                               ". Supported formats: .json, .toon, .yaml, .yml");
+    }
+}
+
+void dump(const Value& value, const std::string& filename) {
+    // Extract file extension
+    std::filesystem::path filePath(filename);
+    std::string extension = filePath.extension().string();
+    
+    // Convert to lowercase for case-insensitive comparison
+    std::transform(extension.begin(), extension.end(), extension.begin(), ::tolower);
+    
+    // Route to appropriate dumper based on file extension
+    if (extension == ".json") {
+        dumpJson(value, filename);
+    } else if (extension == ".toon") {
+        dumpToon(value, filename);
+    } else if (extension == ".yaml" || extension == ".yml") {
+        dumpYaml(value, filename);
+    } else {
+        throw std::runtime_error("Unsupported file format: " + extension + 
+                               ". Supported formats: .json, .toon, .yaml, .yml");
+    }
+}
+
+Value loads(const std::string& content, FormatType format) {
+    switch (format) {
+        case FormatType::JSON:
+            return loadsJson(content);
+        case FormatType::TOON:
+            return loadsToon(content);
+        case FormatType::YAML:
+            return loadsYaml(content);
+        default:
+            throw std::runtime_error("Unsupported format type");
+    }
+}
+
+std::string dumps(const Value& value, FormatType format) {
+    switch (format) {
+        case FormatType::JSON:
+            return dumpsJson(value);
+        case FormatType::TOON:
+            return dumpsToon(value);
+        case FormatType::YAML:
+            return dumpsYaml(value);
+        default:
+            throw std::runtime_error("Unsupported format type");
+    }
+}
+
 } // namespace serin

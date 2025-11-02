@@ -40,12 +40,17 @@ target_include_directories(serin
     PRIVATE ${PROJECT_SOURCE_DIR}/src/sources
 )
 
+target_compile_definitions(serin PUBLIC
+    SERIN_VERSION=${PROJECT_VERSION}
+)
+
 # Compiler options
 target_compile_options(serin PRIVATE
     -Wall
     -Wextra
     -Wpedantic
 )
+
 
 # Build examples
 option(BUILD_EXAMPLES "Build example programs" ON)

@@ -1,4 +1,5 @@
 #include "serin.h"
+#include "utils.h"
 
 #include <algorithm>
 #include <cctype>
@@ -326,23 +327,11 @@ Value decode(const std::string& input, const DecodeOptions& /*options*/) {
 }
 
 void encodeToFile(const Value& value, const std::string& outputFile, const EncodeOptions& options) {
-    std::ofstream file(outputFile);
-    if (!file.is_open()) {
-        throw std::runtime_error("Cannot open output file: " + outputFile);
-    }
-
-    file << encode(value, options);
+    writeStringToFile(encode(value, options), outputFile);
 }
 
 Value decodeFromFile(const std::string& inputFile, const DecodeOptions& options) {
-    std::ifstream file(inputFile);
-    if (!file.is_open()) {
-        throw std::runtime_error("Cannot open input file: " + inputFile);
-    }
-
-    std::stringstream buffer;
-    buffer << file.rdbuf();
-    return decode(buffer.str(), options);
+    return decode(readStringFromFile(inputFile), options);
 }
 
 Value loadToon(const std::string& filename, const ToonOptions& options) {

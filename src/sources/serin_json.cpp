@@ -57,12 +57,7 @@ Value loadsJson(const std::string& jsonString) {
 }
 
     Value loadJson(const std::string& filename) {
-        std::ifstream file(filename);
-        if (!file) throw std::runtime_error("Cannot open file: " + filename);
-
-        std::ostringstream buffer;
-        buffer << file.rdbuf();
-        return loadsJson(buffer.str());
+        return loadsJson(readStringFromFile(filename));
     }
 
 //#define BUILD_YYJSON
@@ -193,9 +188,7 @@ Value loadsJson(const std::string& jsonString) {
 
 
 void dumpJson(const Value& value, const std::string& filename, int indent) {
-    std::ofstream file(filename);
-    if (!file) throw std::runtime_error("Cannot open file: " + filename);
-    file << dumpsJson(value, indent);
+    writeStringToFile(dumpsJson(value, indent), filename);
 }
 
 // =====================

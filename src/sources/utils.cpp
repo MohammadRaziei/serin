@@ -1,6 +1,9 @@
 #include "utils.h"
 
 #include <cctype>
+#include <fstream>
+#include <sstream>
+#include <stdexcept>
 
 namespace serin {
 
@@ -18,5 +21,38 @@ std::string trim(std::string_view view) {
     return std::string(view.substr(begin, end - begin));
 }
 
-} // namespace serin
+std::string readStringFromFile(const std::string& filename) {
+    std::ifstream file(filename, std::ios::binary | std::ios::ate);
+    if (!file.is_open()) {
+        throw std::runtime_error("Cannot open file for reading: " + filename);
+    }
+    
+    // Get file size
+    std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg);
+    
+    // Read file content directly into string
+    std::string content;
+    content.resize(size);
+    
+    if (!file.read(&content[0], size)) {
+        throw std::runtime_error("Error reading from file: " + filename);
+    }
+    
+    return content;
+}
 
+void writeStringToFile(const std::string& content, const std::string& filename) {
+    std::ofstream file(filename);
+    if (!file.is_open()) {
+        throw std::runtime_error("Cannot open file for writing: " + filename);
+    }
+    
+    file << content;
+    
+    if (file.fail()) {
+        throw std::runtime_error("Error writing to file: " + filename);
+    }
+}
+
+} // namespace serin
