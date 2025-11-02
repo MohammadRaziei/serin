@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
+#include <algorithm>
 
 namespace serin {
 
@@ -53,6 +54,13 @@ void writeStringToFile(const std::string& content, const std::string& filename) 
     if (file.fail()) {
         throw std::runtime_error("Error writing to file: " + filename);
     }
+}
+
+std::string toLower(std::string value) {
+    std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) {
+        return static_cast<char>(std::tolower(ch));
+    });
+    return value;
 }
 
 } // namespace serin

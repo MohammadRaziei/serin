@@ -12,28 +12,9 @@
 namespace fs = std::filesystem;
 
 namespace {
-constexpr const char *serinVersion = MACRO_STRINGIFY(SERIN_VERSION);
+const std::string serinVersion = MACRO_STRINGIFY(SERIN_VERSION);
 
-std::string toLower(std::string value) {
-    std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) {
-        return static_cast<char>(std::tolower(ch));
-    });
-    return value;
-}
 
-std::optional<serin::FormatType> parseFormat(const std::string &name) {
-    const auto lowered = toLower(name);
-    if (lowered == "json") {
-        return serin::FormatType::JSON;
-    }
-    if (lowered == "toon") {
-        return serin::FormatType::TOON;
-    }
-    if (lowered == "yaml" || lowered == "yml") {
-        return serin::FormatType::YAML;
-    }
-    return std::nullopt;
-}
 
 std::string availableFormats() {
     return "json, toon, yaml";
@@ -47,15 +28,15 @@ void printHelp(const CLI::App &app) {
 
 int main(int argc, char **argv) {
     CLI::App app{"Serin - A modern C++ serialization library and CLI tool\n"
-                 "Version: " + std::string(serinVersion) + "\n"
+                 "Version: " + serinVersion + "\n"
                  "\n"
                  "Serin provides fast and flexible serialization between JSON, YAML, and Toon formats. "
                  "It can convert between different serialization formats and manipulate structured data.\n"
                  "\n"
                  "Examples:\n"
-                 "  serin input.json -o output.yaml          # Convert JSON to YAML\n"
-                 "  serin input.yaml -t json                 # Convert YAML to JSON (stdout)\n"
-                 "  serin input.toon -o output.json -i 4     # Convert Toon to JSON with 4-space indent"};
+                 "$  serin input.json -o output.yaml          # Convert JSON to YAML\n"
+                 "$  serin input.yaml -t json                 # Convert YAML to JSON (stdout)\n"
+                 "$  serin input.toon -o output.json -i 4     # Convert Toon to JSON with 4-space indent"};
 
     std::string inputPath;
     std::string outputPath;
@@ -115,18 +96,18 @@ int main(int argc, char **argv) {
             serin::dump(value, outputPath);
         } else {
             // Determine output format for stdout
-            serin::FormatType outputFormat = serin::FormatType::TOON; // default
+            serin::Type type = serin::Type::TOON; // default
             if (!outputType.empty()) {
-                auto requested = parseFormat(outputType);
-                if (!requested) {
+                serin::Type requested = serin::stringToType(outputType);
+                if (requested == serin::Type::UNKOWN) {
                     std::cerr << "Unknown output type: " << outputType << std::endl;
                     std::cerr << "Supported formats: " << availableFormats() << std::endl;
                     return 1;
                 }
-                outputFormat = *requested;
+                type = requested;
             }
             // Dump to stdout with specified format and indent
-            std::cout << serin::dumps(value, outputFormat, indent) << std::endl;
+            std::cout << serin::dumps(value, type, indent) << std::endl;
         }
     } catch (const std::exception &error) {
         std::cerr << "Failed to process: " << error.what() << std::endl;

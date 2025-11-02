@@ -1,5 +1,6 @@
 #include "serin.h"
 #include "yyjson.h"
+#include "utils.h"
 
 
 #include <filesystem>
@@ -112,6 +113,21 @@ bool isPrimitive(const Value& value) { return value.isPrimitive(); }
 bool isObject(const Value& value) { return value.isObject(); }
 bool isArray(const Value& value) { return value.isArray(); }
 
+
+Type stringToType(const std::string &name) {
+    const auto lowered = serin::toLower(name);
+    if (lowered == "json") {
+        return serin::Type::JSON;
+    }
+    if (lowered == "toon") {
+        return serin::Type::TOON;
+    }
+    if (lowered == "yaml" || lowered == "yml") {
+        return serin::Type::YAML;
+    }
+    return serin::Type::UNKOWN;
+}
+
 // Generic file format functions (auto-detect format from file extension)
 Value load(const std::string& filename) {
     // Extract file extension
@@ -155,26 +171,26 @@ void dump(const Value& value, const std::string& filename) {
     }
 }
 
-Value loads(const std::string& content, FormatType format) {
-    switch (format) {
-        case FormatType::JSON:
+Value loads(const std::string& content, Type type) {
+    switch (type) {
+        case Type::JSON:
             return loadsJson(content);
-        case FormatType::TOON:
+        case Type::TOON:
             return loadsToon(content);
-        case FormatType::YAML:
+        case Type::YAML:
             return loadsYaml(content);
         default:
             throw std::runtime_error("Unsupported format type");
     }
 }
 
-std::string dumps(const Value& value, FormatType format, int indent) {
+std::string dumps(const Value& value, Type format, int indent) {
     switch (format) {
-        case FormatType::JSON:
+        case Type::JSON:
             return dumpsJson(value, indent);
-        case FormatType::TOON:
+        case Type::TOON:
             return dumpsToon(value, EncoderOptions(indent));
-        case FormatType::YAML:
+        case Type::YAML:
             return dumpsYaml(value, indent);
         default:
             throw std::runtime_error("Unsupported format type");

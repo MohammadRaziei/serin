@@ -11,11 +11,14 @@
 namespace serin {
 
 // Format types enum
-enum class FormatType {
+enum class Type {
     JSON,
     TOON,
-    YAML
+    YAML,
+    UNKOWN
 };
+
+Type stringToType(const std::string & name);
 
 // Forward declarations
 struct Value;
@@ -119,7 +122,7 @@ Value load(const std::string& filename);
 void dump(const Value& value, const std::string& filename);
 
 // Format-specific functions with explicit format type
-Value loads(const std::string& content, FormatType format);
-std::string dumps(const Value& value, FormatType format, int indent = 2);
+Value loads(const std::string& content, Type format);
+std::string dumps(const Value& value, Type format, int indent = 2);
 
 } // namespace serin

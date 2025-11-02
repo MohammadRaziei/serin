@@ -17,4 +17,6 @@ std::string readStringFromFile(const std::string& filename);
 // Throws std::runtime_error if the file cannot be written.
 void writeStringToFile(const std::string& content, const std::string& filename);
 
+std::string toLower(std::string value);
+
 } // namespace serin
