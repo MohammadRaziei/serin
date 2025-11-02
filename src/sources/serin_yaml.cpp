@@ -1,9 +1,14 @@
 #include "serin.h"
 #include "utils.h"
 
+#include <algorithm>
 #include <cctype>
+#include <cerrno>
+#include <cmath>
 #include <cstdlib>
 #include <fstream>
+#include <iomanip>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <string_view>
@@ -25,6 +30,30 @@ struct Line {
 
 Primitive makePrimitiveNull() { return Primitive{std::nullptr_t{}}; }
 
+bool looksInteger(const std::string &token, int base = 10) {
+  if (token.empty()) {
+    return false;
+  }
+
+  char *endPtr = nullptr;
+  errno = 0;
+  const long long value = std::strtoll(token.c_str(), &endPtr, base);
+  (void)value;
+  return endPtr && *endPtr == '\0' && endPtr != token.c_str() && errno == 0;
+}
+
+bool looksFloatingPoint(const std::string &token) {
+  if (token.empty()) {
+    return false;
+  }
+
+  char *endPtr = nullptr;
+  errno = 0;
+  const double numeric = std::strtod(token.c_str(), &endPtr);
+  (void)numeric;
+  return endPtr && *endPtr == '\0' && endPtr != token.c_str() && errno == 0;
+}
+
 Primitive parseScalarPrimitive(const std::string &token) {
   if (token.empty()) {
     return Primitive{std::string{}};
@@ -40,10 +69,14 @@ Primitive parseScalarPrimitive(const std::string &token) {
     return Primitive{false};
   }
 
-  char *endPtr = nullptr;
-  const double numeric = std::strtod(token.c_str(), &endPtr);
-  if (endPtr && *endPtr == '\0' && endPtr != token.c_str()) {
-    return Primitive{numeric};
+  if (looksInteger(token)) {
+    errno = 0;
+    return Primitive{static_cast<int64_t>(std::strtoll(token.c_str(), nullptr, 10))};
+  }
+
+  if (looksFloatingPoint(token)) {
+    errno = 0;
+    return Primitive{std::strtod(token.c_str(), nullptr)};
   }
 
   if (token.front() == '"' && token.back() == '"') {
@@ -258,6 +291,62 @@ std::vector<Line> preprocess(const std::string &yamlString) {
   return lines;
 }
 
+bool needsQuoting(const std::string &value) {
+  if (value.empty()) {
+    return true;
+  }
+
+  if (std::isspace(static_cast<unsigned char>(value.front())) ||
+      std::isspace(static_cast<unsigned char>(value.back()))) {
+    return true;
+  }
+
+  for (char c : value) {
+    if (c == '\n' || c == '\t' || c == '\r') {
+      return true;
+    }
+  }
+
+  const std::string lower = [&value]() {
+    std::string tmp = value;
+    std::transform(tmp.begin(), tmp.end(), tmp.begin(),
+                   [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
+    return tmp;
+  }();
+
+  if (lower == "null" || lower == "true" || lower == "false" || lower == "~") {
+    return true;
+  }
+
+  if (looksInteger(value) || looksFloatingPoint(value)) {
+    return true;
+  }
+
+  if (value.front() == '-' || value.front() == ':' || value.front() == '#' ||
+      value.front() == '?' || value.front() == '@' || value.front() == '&' ||
+      value.front() == '*' || value.front() == '!' || value.front() == '%' ||
+      value.front() == '|') {
+    return true;
+  }
+
+  for (char c : value) {
+    switch (c) {
+    case ':':
+      return true;
+    case '{':
+    case '}':
+    case '[':
+    case ']':
+    case ',':
+      return true;
+    default:
+      break;
+    }
+  }
+
+  return false;
+}
+
 std::string encodeScalar(const Primitive &primitive) {
   return std::visit(
       [](const auto &value) -> std::string {
@@ -269,13 +358,18 @@ std::string encodeScalar(const Primitive &primitive) {
         } else if constexpr (std::is_same_v<T, double> ||
                              std::is_same_v<T, int64_t>) {
           std::ostringstream oss;
-          oss << value;
+          if constexpr (std::is_same_v<T, double>) {
+            if (std::isfinite(value) && std::floor(value) == value) {
+              oss << std::fixed << std::setprecision(1) << value;
+            } else {
+              oss << std::setprecision(std::numeric_limits<double>::digits10 + 1) << value;
+            }
+          } else {
+            oss << value;
+          }
           return oss.str();
         } else { // std::string
-          const bool needsQuotes =
-              value.find_first_of("\n:#-{}[]\"'") != std::string::npos ||
-              value.empty();
-          if (!needsQuotes) {
+          if (!needsQuoting(value)) {
             return value;
           }
           std::string escaped;
@@ -335,10 +429,48 @@ void dumpValue(const Value &value, int indent, int indentStep,
         out.push_back(' ');
         out += encodeScalar(element.asPrimitive());
         out += '\n';
-      } else {
-        out += '\n';
-        dumpValue(element, indent + indentStep, indentStep, out);
+        continue;
       }
+
+      if (element.isObject()) {
+        const auto &object = element.asObject();
+        if (object.empty()) {
+          out += " {}\n";
+          continue;
+        }
+
+        auto it = object.begin();
+        const auto end = object.end();
+        out.push_back(' ');
+        out += it->first;
+        out += ":";
+        if (it->second.isPrimitive()) {
+          out.push_back(' ');
+          out += encodeScalar(it->second.asPrimitive());
+          out += '\n';
+        } else {
+          out += '\n';
+          dumpValue(it->second, indent + indentStep, indentStep, out);
+        }
+        ++it;
+        for (; it != end; ++it) {
+          out += std::string(static_cast<size_t>(indent + indentStep), ' ');
+          out += it->first;
+          out += ":";
+          if (it->second.isPrimitive()) {
+            out.push_back(' ');
+            out += encodeScalar(it->second.asPrimitive());
+            out += '\n';
+          } else {
+            out += '\n';
+            dumpValue(it->second, indent + indentStep, indentStep, out);
+          }
+        }
+        continue;
+      }
+
+      out += '\n';
+      dumpValue(element, indent + indentStep, indentStep, out);
     }
     return;
   }
