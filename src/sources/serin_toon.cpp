@@ -88,45 +88,39 @@ constexpr const char* TRUE_LITERAL = "true";
 constexpr const char* FALSE_LITERAL = "false";
 
 std::string encodePrimitive(const Primitive& primitive, Delimiter delimiter) {
-    return std::visit([delimiter](const auto& value) -> std::string {
-        using T = std::decay_t<decltype(value)>;
+    // Use Primitive::asString() which already uses yyjson for number serialization
+    std::string result = primitive.asString();
+    
+    // For strings, we still need to handle TOON-specific quoting
+    if (primitive.isString()) {
+        bool needsQuoting = result.empty() || result.front() == SPACE || result.back() == SPACE ||
+                             result == TRUE_LITERAL || result == FALSE_LITERAL || result == NULL_LITERAL;
 
-        if constexpr (std::is_same_v<T, std::nullptr_t>) {
-            return NULL_LITERAL;
-        } else if constexpr (std::is_same_v<T, bool>) {
-            return value ? TRUE_LITERAL : FALSE_LITERAL;
-        } else if constexpr (std::is_same_v<T, double> || std::is_same_v<T, int64_t>) {
-            std::ostringstream oss;
-            oss << value;
-            return oss.str();
-        } else if constexpr (std::is_same_v<T, std::string>) {
-            bool needsQuoting = value.empty() || value.front() == SPACE || value.back() == SPACE ||
-                                 value == TRUE_LITERAL || value == FALSE_LITERAL || value == NULL_LITERAL;
+        const char activeDelimiter = static_cast<char>(delimiter);
+        if (!needsQuoting) {
+            needsQuoting = result.find(activeDelimiter) != std::string::npos ||
+                           result.find(COLON) != std::string::npos ||
+                           result.find(DOUBLE_QUOTE) != std::string::npos ||
+                           result.find(BACKSLASH) != std::string::npos;
+        }
 
-            const char activeDelimiter = static_cast<char>(delimiter);
-            if (!needsQuoting) {
-                needsQuoting = value.find(activeDelimiter) != std::string::npos ||
-                               value.find(COLON) != std::string::npos ||
-                               value.find(DOUBLE_QUOTE) != std::string::npos ||
-                               value.find(BACKSLASH) != std::string::npos;
-            }
-
-            if (!needsQuoting) {
-                return value;
-            }
-
-            std::string result;
-            result += DOUBLE_QUOTE;
-            for (char c : value) {
-                if (c == DOUBLE_QUOTE || c == BACKSLASH) {
-                    result += BACKSLASH;
-                }
-                result += c;
-            }
-            result += DOUBLE_QUOTE;
+        if (!needsQuoting) {
             return result;
         }
-    }, primitive);
+
+        std::string escaped;
+        escaped += DOUBLE_QUOTE;
+        for (char c : result) {
+            if (c == DOUBLE_QUOTE || c == BACKSLASH) {
+                escaped += BACKSLASH;
+            }
+            escaped += c;
+        }
+        escaped += DOUBLE_QUOTE;
+        return escaped;
+    }
+    
+    return result;
 }
 
 std::string encodeAndJoinPrimitives(const std::vector<Primitive>& primitives, Delimiter delimiter) {

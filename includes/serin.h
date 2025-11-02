@@ -14,9 +14,34 @@ namespace serin {
 struct Value;
 
 // TOON value types
-using Primitive = std::variant<std::string, double, int64_t, bool, std::nullptr_t>;
 using Object = tsl::ordered_map<std::string, Value>;
 using Array = std::vector<Value>;
+
+struct Primitive: std::variant<std::string, double, int64_t, bool, std::nullptr_t> {
+    using Base = std::variant<std::string, double, int64_t, bool, std::nullptr_t>;
+    
+    // Inherit constructors
+    using Base::Base;
+    
+    // Type checking methods
+    bool isString() const;
+    bool isDouble() const;
+    bool isInt() const;
+    bool isBool() const;
+    bool isNull() const;
+    bool isNumber() const;
+    
+    // Getter methods with error checking
+    const std::string& getString() const;
+    double getDouble() const;
+    int64_t getInt() const;
+    bool getBool() const;
+    std::nullptr_t getNull() const;
+    double getNumber() const;
+    
+    // Conversion to string
+    std::string asString() const;
+};
 
 struct Value {
     std::variant<Primitive, Object, Array> value;

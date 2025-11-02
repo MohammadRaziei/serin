@@ -7,9 +7,6 @@
 #include <cmath>
 #include <cstdlib>
 #include <fstream>
-#include <iomanip>
-#include <limits>
-#include <sstream>
 #include <stdexcept>
 #include <string_view>
 #include <type_traits>
@@ -348,49 +345,38 @@ bool needsQuoting(const std::string &value) {
 }
 
 std::string encodeScalar(const Primitive &primitive) {
-  return std::visit(
-      [](const auto &value) -> std::string {
-        using T = std::decay_t<decltype(value)>;
-        if constexpr (std::is_same_v<T, std::nullptr_t>) {
-          return "null";
-        } else if constexpr (std::is_same_v<T, bool>) {
-          return value ? "true" : "false";
-        } else if constexpr (std::is_same_v<T, double> ||
-                             std::is_same_v<T, int64_t>) {
-          std::ostringstream oss;
-          oss << value;
-          return oss.str();
-        } else { // std::string
-          if (!needsQuoting(value)) {
-            return value;
-          }
-          std::string escaped;
-          escaped.reserve(value.size() + 2);
-          escaped.push_back('"');
-          for (char c : value) {
-            switch (c) {
-            case '\n':
-              escaped += "\\n";
-              break;
-            case '\t':
-              escaped += "\\t";
-              break;
-            case '"':
-              escaped += "\\\"";
-              break;
-            case '\\':
-              escaped += "\\\\";
-              break;
-            default:
-              escaped.push_back(c);
-              break;
-            }
-          }
-          escaped.push_back('"');
-          return escaped;
-        }
-      },
-      primitive);
+  // Use Primitive::asString() which already uses yyjson for number serialization
+  std::string result = primitive.asString();
+  
+  // For strings, we still need to handle YAML-specific quoting
+  if (primitive.isString() && needsQuoting(result)) {
+    std::string escaped;
+    escaped.reserve(result.size() + 2);
+    escaped.push_back('"');
+    for (char c : result) {
+      switch (c) {
+      case '\n':
+        escaped += "\\n";
+        break;
+      case '\t':
+        escaped += "\\t";
+        break;
+      case '"':
+        escaped += "\\\"";
+        break;
+      case '\\':
+        escaped += "\\\\";
+        break;
+      default:
+        escaped.push_back(c);
+        break;
+      }
+    }
+    escaped.push_back('"');
+    return escaped;
+  }
+  
+  return result;
 }
 
 void dumpValue(const Value &value, int indent, int indentStep,
