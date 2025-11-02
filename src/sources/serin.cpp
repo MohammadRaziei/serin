@@ -167,14 +167,14 @@ Value loads(const std::string& content, FormatType format) {
     }
 }
 
-std::string dumps(const Value& value, FormatType format) {
+std::string dumps(const Value& value, FormatType format, int indent) {
     switch (format) {
         case FormatType::JSON:
-            return dumpsJson(value);
+            return dumpsJson(value, indent);
         case FormatType::TOON:
-            return dumpsToon(value);
+            return dumpsToon(value, ToonOptions(indent));
         case FormatType::YAML:
-            return dumpsYaml(value);
+            return dumpsYaml(value, indent);
         default:
             throw std::runtime_error("Unsupported format type");
     }

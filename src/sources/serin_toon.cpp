@@ -9,70 +9,7 @@
 
 namespace serin {
 
-ToonOptions::ToonOptions(int indent) {
-    setIndent(indent);
-}
-
-ToonOptions& ToonOptions::setIndent(int indent) {
-    indent_ = std::max(0, indent);
-    return *this;
-}
-
-ToonOptions& ToonOptions::setDelimiter(Delimiter delimiter) {
-    delimiter_ = delimiter;
-    return *this;
-}
-
-ToonOptions& ToonOptions::setLengthMarker(bool enabled) {
-    lengthMarker_ = enabled;
-    return *this;
-}
-
-ToonOptions& ToonOptions::setStrict(bool strict) {
-    strict_ = strict;
-    return *this;
-}
-
-int ToonOptions::indent() const {
-    return indent_;
-}
-
-Delimiter ToonOptions::delimiter() const {
-    return delimiter_;
-}
-
-bool ToonOptions::lengthMarker() const {
-    return lengthMarker_;
-}
-
-bool ToonOptions::strict() const {
-    return strict_;
-}
-
 namespace {
-struct EncodeOptions {
-    int indent = 2;
-    Delimiter delimiter = Delimiter::Comma;
-    bool lengthMarker = false;
-};
-
-struct DecodeOptions {
-    bool strict = true;
-};
-
-EncodeOptions makeEncodeOptions(const ToonOptions& options) {
-    EncodeOptions result;
-    result.indent = options.indent();
-    result.delimiter = options.delimiter();
-    result.lengthMarker = options.lengthMarker();
-    return result;
-}
-
-DecodeOptions makeDecodeOptions(const ToonOptions& options) {
-    DecodeOptions result;
-    result.strict = options.strict();
-    return result;
-}
 
 constexpr char COLON = ':';
 constexpr char SPACE = ' ';
@@ -154,7 +91,7 @@ bool isArrayOfObjects(const Array& array) {
     });
 }
 
-std::string encodeArrayOfPrimitives(const std::string& key, const Array& array, const EncodeOptions& options) {
+std::string encodeArrayOfPrimitives(const std::string& key, const Array& array, const EncoderOptions& options) {
     std::ostringstream oss;
     oss << key << OPEN_BRACKET << array.size() << CLOSE_BRACKET << COLON;
 
@@ -168,10 +105,10 @@ std::string encodeArrayOfPrimitives(const std::string& key, const Array& array, 
     return oss.str();
 }
 
-std::string encodeArrayOfObjects(const std::string& key, const Array& array, const EncodeOptions& options, int depth);
-std::string encodeObject(const Object& obj, const EncodeOptions& options, int depth);
+std::string encodeArrayOfObjects(const std::string& key, const Array& array, const EncoderOptions& options, int depth);
+std::string encodeObject(const Object& obj, const EncoderOptions& options, int depth);
 
-std::string encodeValue(const std::string& key, const Value& value, const EncodeOptions& options, int depth) {
+std::string encodeValue(const std::string& key, const Value& value, const EncoderOptions& options, int depth) {
     if (value.isPrimitive()) {
         return key + COLON + SPACE + encodePrimitive(value.asPrimitive(), options.delimiter);
     }
@@ -214,7 +151,7 @@ std::string encodeValue(const std::string& key, const Value& value, const Encode
     return key + COLON + SPACE + NULL_LITERAL;
 }
 
-std::string encodeArrayOfObjects(const std::string& key, const Array& array, const EncodeOptions& options, int depth) {
+std::string encodeArrayOfObjects(const std::string& key, const Array& array, const EncoderOptions& options, int depth) {
     if (array.empty()) {
         return key + "[0]{}:\n";
     }
@@ -264,7 +201,7 @@ std::string encodeArrayOfObjects(const std::string& key, const Array& array, con
     return oss.str();
 }
 
-std::string encodeObject(const Object& obj, const EncodeOptions& options, int depth) {
+std::string encodeObject(const Object& obj, const EncoderOptions& options, int depth) {
     std::ostringstream oss;
     const std::string indent(depth * options.indent, SPACE);
 
@@ -283,7 +220,7 @@ std::string encodeObject(const Object& obj, const EncodeOptions& options, int de
 
 } // namespace
 
-std::string encode(const Value& value, const EncodeOptions& options) {
+std::string encode(const Value& value, const EncoderOptions& options) {
     if (value.isPrimitive()) {
         return encodePrimitive(value.asPrimitive(), options.delimiter);
     }
@@ -299,7 +236,7 @@ std::string encode(const Value& value, const EncodeOptions& options) {
     return NULL_LITERAL;
 }
 
-Value decode(const std::string& input, const DecodeOptions& /*options*/) {
+Value decode(const std::string& input, bool strict) {
     if (input.empty()) {
         return Object{};
     }
@@ -326,28 +263,30 @@ Value decode(const std::string& input, const DecodeOptions& /*options*/) {
     return Value(input);
 }
 
-void encodeToFile(const Value& value, const std::string& outputFile, const EncodeOptions& options) {
+void encodeToFile(const Value& value, const std::string& outputFile, const EncoderOptions& options) {
     writeStringToFile(encode(value, options), outputFile);
 }
 
-Value decodeFromFile(const std::string& inputFile, const DecodeOptions& options) {
-    return decode(readStringFromFile(inputFile), options);
+Value decodeFromFile(const std::string& inputFile, bool strict) {
+    return decode(readStringFromFile(inputFile), strict);
 }
 
-Value loadToon(const std::string& filename, const ToonOptions& options) {
-    return decodeFromFile(filename, makeDecodeOptions(options));
+// TOON functions implementation
+Value loadToon(const std::string& filename, bool strict) {
+    return decodeFromFile(filename, strict);
 }
 
-Value loadsToon(const std::string& toonString, const ToonOptions& options) {
-    return decode(toonString, makeDecodeOptions(options));
+
+Value loadsToon(const std::string& toonString, bool strict) {
+    return decode(toonString, strict);
 }
 
-std::string dumpsToon(const Value& value, const ToonOptions& options) {
-    return encode(value, makeEncodeOptions(options));
+std::string dumpsToon(const Value& value, const EncoderOptions& options) {
+    return encode(value, options);
 }
 
-void dumpToon(const Value& value, const std::string& filename, const ToonOptions& options) {
-    encodeToFile(value, filename, makeEncodeOptions(options));
+void dumpToon(const Value& value, const std::string& filename, const EncoderOptions& options) {
+    encodeToFile(value, filename, options);
 }
 
 } // namespace serin
