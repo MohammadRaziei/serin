@@ -1,5 +1,7 @@
 #include "serin.h"
 #include "yyjson.h"
+#include "utils.h"
+
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -56,9 +58,9 @@ Value loadsJson(const std::string& jsonString) {
     return value;
 }
 
-    Value loadJson(const std::string& filename) {
-        return loadsJson(readStringFromFile(filename));
-    }
+Value loadJson(const std::string& filename) {
+    return loadsJson(readStringFromFile(filename));
+}
 
 //#define BUILD_YYJSON
 //#ifndef BUILD_YYJSON

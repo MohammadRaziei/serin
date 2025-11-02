@@ -1,6 +1,7 @@
 #include "serin.h"
 #include "yyjson.h"
 
+
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -179,5 +180,31 @@ std::string dumps(const Value& value, FormatType format, int indent) {
             throw std::runtime_error("Unsupported format type");
     }
 }
+
+
+
+// Value loadJson(const std::string& filename) {
+//     return loadsJson(readStringFromFile(filename));
+// }
+// Value loadYaml(const std::string& filename) {
+//     return loadsYaml(readStringFromFile(filename));
+// }
+// Value loadToon(const std::string& filename, bool strict) {
+//     return loadsToon(readStringFromFile(filename), strict);
+// }
+
+// void dumpJson(const Value& value, const std::string& filename, int indent) {
+//     writeStringToFile(dumpsJson(value, indent), filename);
+// }
+// void dumpToon(const Value& value, const std::string& filename, int indent) {
+//     writeStringToFile(dumpsToon(value, indent), filename);
+// }
+// void dumpYaml(const Value& value, const std::string& filename, int indent) {
+//     writeStringToFile(dumpsYaml(value, indent), filename);
+// }
+// void dumpToon(const Value& value, const std::string& filename, const EncoderOptions& options = {}) {
+//     writeStringToFile(dumpsToon(value, options), filename);
+// }
+
 
 } // namespace serin

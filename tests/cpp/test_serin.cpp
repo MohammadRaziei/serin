@@ -321,9 +321,10 @@ TEST_CASE("Toon options customize formatting supports alternate delimiters") {
     tags.emplace_back(serin::Value("blue"));
     obj["tags"] = serin::Value(tags);
 
-    serin::ToonOptions options;
-    options.setIndent(4).setDelimiter(serin::Delimiter::Pipe);
-
+    serin::EncoderOptions options;
+    options.delimiter = serin::Delimiter::Pipe; 
+    options.indent = 4;
+    
     auto toon = serin::dumpsToon(serin::Value(obj), options);
     CHECK(toon.find("tags[2]: red|blue") != std::string::npos);
     CHECK(toon.find("name: Alice") != std::string::npos);
