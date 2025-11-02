@@ -1,0 +1,7 @@
+users[2]:
+  - id: 1
+    name: Alice
+    role: admin
+  - id: 2
+    role: user
+    gen: male
