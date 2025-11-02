@@ -174,6 +174,7 @@ Value loadsJson(const std::string& jsonString) {
         yyjson_mut_val* root = buildYyjson(doc, value);
         yyjson_mut_doc_set_root(doc, root);
 
+        if (indent == 0) indent = -1;
         char* json_cstr = yyjson_mut_write(doc, indent, nullptr);
         std::string json(json_cstr);
         free(json_cstr);
