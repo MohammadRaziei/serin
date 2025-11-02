@@ -172,7 +172,7 @@ std::string dumps(const Value& value, FormatType format, int indent) {
         case FormatType::JSON:
             return dumpsJson(value, indent);
         case FormatType::TOON:
-            return dumpsToon(value, ToonOptions(indent));
+            return dumpsToon(value, EncoderOptions(indent));
         case FormatType::YAML:
             return dumpsYaml(value, indent);
         default:

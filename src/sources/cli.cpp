@@ -1,14 +1,10 @@
 #include "serin.h"
 #include "CLI11.hpp"
 
-#include <algorithm>
-#include <cctype>
 #include <filesystem>
 #include <iostream>
-#include <optional>
 #include <stdexcept>
 #include <string>
-
 
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
@@ -18,12 +14,6 @@ namespace fs = std::filesystem;
 namespace {
 constexpr const char *serinVersion = MACRO_STRINGIFY(SERIN_VERSION);
 
-enum class Format {
-    Json,
-    Toon,
-    Yaml,
-};
-
 std::string toLower(std::string value) {
     std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) {
         return static_cast<char>(std::tolower(ch));
@@ -31,78 +21,22 @@ std::string toLower(std::string value) {
     return value;
 }
 
-std::optional<Format> parseFormat(const std::string &name) {
+std::optional<serin::FormatType> parseFormat(const std::string &name) {
     const auto lowered = toLower(name);
     if (lowered == "json") {
-        return Format::Json;
+        return serin::FormatType::JSON;
     }
     if (lowered == "toon") {
-        return Format::Toon;
+        return serin::FormatType::TOON;
     }
     if (lowered == "yaml" || lowered == "yml") {
-        return Format::Yaml;
-    }
-    return std::nullopt;
-}
-
-std::optional<Format> detectFormatFromExtension(const fs::path &path) {
-    const auto ext = toLower(path.extension().string());
-    if (ext == ".json") {
-        return Format::Json;
-    }
-    if (ext == ".toon") {
-        return Format::Toon;
-    }
-    if (ext == ".yaml" || ext == ".yml") {
-        return Format::Yaml;
+        return serin::FormatType::YAML;
     }
     return std::nullopt;
 }
 
 std::string availableFormats() {
     return "json, toon, yaml";
-}
-
-serin::Value loadValue(const std::string &input, Format format) {
-    switch (format) {
-    case Format::Json:
-        return serin::loadJson(input);
-    case Format::Toon:
-        return serin::loadToon(input);
-    case Format::Yaml:
-        return serin::loadYaml(input);
-    }
-    throw std::runtime_error("Unsupported input format");
-}
-
-void dumpToFile(const serin::Value &value, const std::string &output, Format format, int indent) {
-    serin::ToonOptions toonOptions;
-    toonOptions.setIndent(indent);
-    switch (format) {
-    case Format::Json:
-        serin::dumpJson(value, output, indent);
-        break;
-    case Format::Toon:
-        serin::dumpToon(value, output, toonOptions);
-        break;
-    case Format::Yaml:
-        serin::dumpYaml(value, output, indent);
-        break;
-    }
-}
-
-std::string dumpToString(const serin::Value &value, Format format, int indent) {
-    serin::ToonOptions toonOptions;
-    toonOptions.setIndent(indent);
-    switch (format) {
-    case Format::Json:
-        return serin::dumpsJson(value, indent);
-    case Format::Toon:
-        return serin::dumpsToon(value, toonOptions);
-    case Format::Yaml:
-        return serin::dumpsYaml(value, indent);
-    }
-    throw std::runtime_error("Unsupported output format");
 }
 
 void printHelp(const CLI::App &app) {
@@ -172,53 +106,30 @@ int main(int argc, char **argv) {
         return 1;
     }
 
-    auto inputFormat = detectFormatFromExtension(inputPath);
-    if (!inputFormat) {
-        std::cerr << "Unable to determine input format for '" << inputPath << "'" << std::endl;
-        std::cerr << "Supported formats: " << availableFormats() << std::endl;
-        return 1;
-    }
-
-    std::optional<Format> outputFormat;
-    if (!outputPath.empty()) {
-        outputFormat = detectFormatFromExtension(outputPath);
-        if (!outputFormat) {
-            std::cerr << "Unable to determine output format for '" << outputPath << "'" << std::endl;
-            std::cerr << "Supported formats: " << availableFormats() << std::endl;
-            return 1;
-        }
-        if (!outputType.empty()) {
-            auto requested = parseFormat(outputType);
-            if (!requested) {
-                std::cerr << "Unknown output type: " << outputType << std::endl;
-                std::cerr << "Supported formats: " << availableFormats() << std::endl;
-                return 1;
-            }
-            if (requested != outputFormat) {
-                std::cerr << "Output type '" << outputType << "' does not match the extension of '" << outputPath
-                          << "'" << std::endl;
-                return 1;
-            }
-        }
-    } else {
-        const std::string typeName = outputType.empty() ? "toon" : outputType;
-        outputFormat = parseFormat(typeName);
-        if (!outputFormat) {
-            std::cerr << "Unknown output type: " << typeName << std::endl;
-            std::cerr << "Supported formats: " << availableFormats() << std::endl;
-            return 1;
-        }
-    }
-
     try {
-        const auto value = loadValue(inputPath, *inputFormat);
+        // Load the file using auto-detection
+        serin::Value value = serin::load(inputPath);
+
         if (!outputPath.empty()) {
-            dumpToFile(value, outputPath, *outputFormat, indent);
+            // Dump to file using auto-detection
+            serin::dump(value, outputPath);
         } else {
-            std::cout << dumpToString(value, *outputFormat, indent) << std::endl;
+            // Determine output format for stdout
+            serin::FormatType outputFormat = serin::FormatType::TOON; // default
+            if (!outputType.empty()) {
+                auto requested = parseFormat(outputType);
+                if (!requested) {
+                    std::cerr << "Unknown output type: " << outputType << std::endl;
+                    std::cerr << "Supported formats: " << availableFormats() << std::endl;
+                    return 1;
+                }
+                outputFormat = *requested;
+            }
+            // Dump to stdout with specified format and indent
+            std::cout << serin::dumps(value, outputFormat, indent) << std::endl;
         }
     } catch (const std::exception &error) {
-        std::cerr << "Failed to process input: " << error.what() << std::endl;
+        std::cerr << "Failed to process: " << error.what() << std::endl;
         return 1;
     }
 
