@@ -173,7 +173,7 @@ std::string encodeArrayOfPrimitives(const std::string& key, const Array& array, 
     return oss.str();
 }
 
-std::string encodeArrayOfObjects(const std::string& key, const Array& array, const EncodeOptions& options);
+std::string encodeArrayOfObjects(const std::string& key, const Array& array, const EncodeOptions& options, int depth);
 std::string encodeObject(const Object& obj, const EncodeOptions& options, int depth);
 
 std::string encodeValue(const std::string& key, const Value& value, const EncodeOptions& options, int depth) {
@@ -192,7 +192,7 @@ std::string encodeValue(const std::string& key, const Value& value, const Encode
         }
 
         if (isArrayOfObjects(array)) {
-            return encodeArrayOfObjects(key, array, options);
+            return encodeArrayOfObjects(key, array, options, depth);
         }
 
         std::ostringstream oss;
@@ -219,7 +219,7 @@ std::string encodeValue(const std::string& key, const Value& value, const Encode
     return key + COLON + SPACE + NULL_LITERAL;
 }
 
-std::string encodeArrayOfObjects(const std::string& key, const Array& array, const EncodeOptions& options) {
+std::string encodeArrayOfObjects(const std::string& key, const Array& array, const EncodeOptions& options, int depth) {
     if (array.empty()) {
         return key + "[0]{}:\n";
     }
@@ -241,6 +241,7 @@ std::string encodeArrayOfObjects(const std::string& key, const Array& array, con
     }
     oss << CLOSE_BRACE << COLON << NEWLINE;
 
+    bool first = true;
     for (const auto& item : array) {
         if (!item.isObject()) {
             continue;
@@ -257,7 +258,12 @@ std::string encodeArrayOfObjects(const std::string& key, const Array& array, con
                 values.push_back(nullptr);
             }
         }
-        oss << std::string(options.indent, SPACE) << encodeAndJoinPrimitives(values, options.delimiter) << NEWLINE;
+        if (!first) {
+            oss << NEWLINE;
+        }
+        first = false;
+        // Ensure all array items are indented with proper depth
+        oss << std::string((depth + 1) * options.indent, SPACE) << encodeAndJoinPrimitives(values, options.delimiter);
     }
 
     return oss.str();
@@ -268,8 +274,13 @@ std::string encodeObject(const Object& obj, const EncodeOptions& options, int de
     const std::string indent(depth * options.indent, SPACE);
 
     // The ordered_map preserves insertion order, so we can just iterate normally
+    bool first = true;
     for (const auto& [key, value] : obj) {
-        oss << indent << encodeValue(key, value, options, depth) << NEWLINE;
+        if (!first) {
+            oss << NEWLINE;
+        }
+        oss << indent << encodeValue(key, value, options, depth);
+        first = false;
     }
 
     return oss.str();
