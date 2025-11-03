@@ -91,6 +91,84 @@ bool isArrayOfObjects(const Array& array) {
     });
 }
 
+bool collectUniformObjectFields(const Array& array, std::vector<std::string>& fields) {
+    if (array.empty()) {
+        return true;
+    }
+
+    const Object& firstObj = array.front().asObject();
+    fields.reserve(firstObj.size());
+    for (const auto& [field, _] : firstObj) {
+        fields.push_back(field);
+    }
+
+    for (size_t i = 1; i < array.size(); ++i) {
+        const Object& obj = array[i].asObject();
+        if (obj.size() != fields.size()) {
+            return false;
+        }
+
+        for (const auto& field : fields) {
+            if (obj.find(field) == obj.end()) {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+std::string encodeValue(const std::string& key, const Value& value, const EncoderOptions& options, int depth);
+
+std::string encodeNonUniformArrayOfObjects(const std::string& key,
+                                           const Array& array,
+                                           const EncoderOptions& options,
+                                           int depth) {
+    std::ostringstream oss;
+    oss << key << OPEN_BRACKET << array.size() << CLOSE_BRACKET << COLON << NEWLINE;
+
+    const std::string itemIndent((depth + 1) * options.indent, SPACE);
+    const std::string fieldIndent = itemIndent + std::string(options.indent, SPACE);
+
+    for (size_t index = 0; index < array.size(); ++index) {
+        const auto& item = array[index];
+        oss << itemIndent << "-";
+
+        if (item.isObject()) {
+            const Object& obj = item.asObject();
+            bool firstField = true;
+            for (const auto& [field, fieldValue] : obj) {
+                if (firstField) {
+                    if (fieldValue.isPrimitive()) {
+                        oss << SPACE << field << COLON << SPACE
+                            << encodePrimitive(fieldValue.asPrimitive(), options.delimiter);
+                    } else {
+                        oss << NEWLINE;
+                        oss << fieldIndent
+                            << encodeValue(field, fieldValue, options, depth + 1);
+                    }
+                    firstField = false;
+                    continue;
+                }
+
+                oss << NEWLINE;
+                oss << fieldIndent
+                    << encodeValue(field, fieldValue, options, depth + 1);
+            }
+
+            if (firstField) {
+                oss << NEWLINE;
+            }
+        }
+
+        if (index + 1 < array.size()) {
+            oss << NEWLINE;
+        }
+    }
+
+    return oss.str();
+}
+
 std::string encodeArrayOfPrimitives(const std::string& key, const Array& array, const EncoderOptions& options) {
     std::ostringstream oss;
     oss << key << OPEN_BRACKET << array.size() << CLOSE_BRACKET << COLON;
@@ -156,11 +234,9 @@ std::string encodeArrayOfObjects(const std::string& key, const Array& array, con
         return key + "[0]{}:\n";
     }
 
-    const Object& firstObj = array.front().asObject();
     std::vector<std::string> fields;
-    fields.reserve(firstObj.size());
-    for (const auto& [field, _] : firstObj) {
-        fields.push_back(field);
+    if (!collectUniformObjectFields(array, fields)) {
+        return encodeNonUniformArrayOfObjects(key, array, options, depth);
     }
 
     std::ostringstream oss;
