@@ -68,8 +68,7 @@ int main() {
     tags.push_back(serin::Value("programming"));
     tags.push_back(serin::Value("c++"));
     tags.push_back(serin::Value("serialization"));
-    data["tags"] = serin::Value(tag
-s);
+    data["tags"] = serin::Value(tags);
     
     serin::Value value(data);
 
